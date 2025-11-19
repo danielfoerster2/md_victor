@@ -38,7 +38,7 @@ module force
                             if (r .gt. rc1) then
                                 E_band = xi**2 * exp(-2.0d0 * q * (rc1/r0 - 1.0d0))
                                 dE_band = -2.0d0 * q / r0 * E_band
-                                fcut_band = cut_function(E_band, dE_band, r, rc1, rc2)
+!                                fcut_band = cut_function(E_band, dE_band, r, rc1, rc2)
                                 rho(i) = rho(i) + fcut_band
                             else
                                 rho(i) = rho(i) + xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
@@ -103,9 +103,9 @@ module force
         do i = 1, size(pos, dim=1)
             do k = 1, 3
                 pos(i,k) = pos(i,k) + h
-                E_p = sum(tbsma(var, pos, box, use_cut_function))
+                !E_p = sum(tbsma(var, pos, box, use_cut_function))
                 pos(i,k) = pos(i,k) - 2.0d0 * h
-                E_n = sum(tbsma(var, pos, box, use_cut_function))
+                !E_n = sum(tbsma(var, pos, box, use_cut_function))
                 pos(i,k) = pos(i,k) + h
                 force_num_tbsma(i,k) = -(E_p - E_n) / (2.0d0 * h)
             end do

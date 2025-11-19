@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-Objects = constants.o potential.o force.o file_io.o init.o dynamic.o main.o
+Objects = constants.o potential.o force.o file_io.o dynamic.o main.o
 Program = main
 FCOMP = gfortran
 
@@ -20,9 +20,6 @@ $(Program): $(Objects) Makefile
 constants.o:	constants.f90 Makefile
 	$(FCOMP) $(FFLAGS) -c $<
 
-init.o:			init.f90 constants.o Makefile
-	$(FCOMP) $(FFLAGS) -c $<
-
 file_io.o:	file_io.f90 constants.o Makefile
 	$(FCOMP) $(FFLAGS) -c $<
 
@@ -35,7 +32,7 @@ force.o:		force.f90 constants.o potential.o Makefile
 dynamic.o:		dynamic.f90 constants.o force.o Makefile
 	$(FCOMP) $(FFLAGS) -c $<
 
-main.o:			main.f90 constants.o file_io.o init.o potential.o force.o dynamic.o Makefile
+main.o:			main.f90 constants.o file_io.o potential.o force.o dynamic.o Makefile
 	$(FCOMP) $(FFLAGS) -c $<
 
 

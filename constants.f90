@@ -9,15 +9,33 @@ module constants
     ! mass     → eV·fs²/Angstrom²
 
 
-    integer, parameter              ::  N = 5 ! Stop to the Nth neighbors
-    integer, parameter              ::  n_cells = 5 ! number of cells in lattice
-
+    integer, parameter              ::  n_atoms_max = 10000
     double precision, parameter     ::  convert_mass = 1.0364269d2 ! 1 u = 1.0364269d2 eV.fs²/Angstrom²
+
     double precision, parameter     ::  kb = 8.617d-5 ! Boltzmann constant (eV/K)
-    !double precision, parameter     ::  box_dimension = 10.0d0 * n_cells
-    !double precision, parameter     ::  box(3) = (/ 1.0d0, 1.0d0, 1.0d0 /) * box_dimension
 
-    character(len=2), parameter     ::  atoms(16) = (/ "Ni", "Cu", "Rh", "Pd", "Ag", "Ir", "Pt", "Au", &
-                                            "Al", "Pb", "Ti", "Zr", "Co", "Cd", "Zn", "Mg" /)
+    integer, parameter              ::  n_types = 5, N=5
+    character(len=2), parameter     ::  iel_to_typ(n_types) = (/'Ni', 'Cu', 'Rh', 'Pd', 'Pt' /)
 
-end module
+    double precision                ::  tbsma_a(n_types, n_types), tbsma_xi(n_types, n_types), &
+                                        tbsma_p(n_types, n_types), tbsma_q(n_types, n_types), &
+                                        tbsma_r0(n_types, n_types), tbsma_rc1(n_types, n_types), &
+                                        tbsma_rc2(n_types, n_types), &
+                                        tbsma_x5(n_types, n_types), tbsma_x4(n_types, n_types), tbsma_x3(n_types, n_types), &
+                                        tbsma_a5(n_types, n_types), tbsma_a4(n_types, n_types), tbsma_a3(n_types, n_types)
+
+
+    contains
+
+endmodule
+
+
+module variables
+
+    use constants, only: n_atoms_max
+    implicit none
+
+    integer                         ::  typ(n_atoms_max), n_atoms
+    double precision                ::  box(3), pos(3, n_atoms_max), vel(3, n_atoms_max), epot(n_atoms_max)
+
+endmodule
