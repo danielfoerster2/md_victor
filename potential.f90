@@ -93,8 +93,8 @@ module potential
                     if (r .lt. tbsma_rc2(typ(i_atom), typ(j_atom))) then
 
                         if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
-                            e_rep = e_rep + x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3
-                            rho = rho + a5*(r-rc2)**5 + a4*(r-rc2)**4 + a3*(r-rc2)**3
+                            e_rep = e_rep + a5*(r-rc2)**5 + a4*(r-rc2)**4 + a3*(r-rc2)**3
+                            rho = rho + x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3
                         else
                             e_rep = e_rep + a * exp(-p * (r/r0 - 1.0d0))
                             rho = rho + xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
@@ -113,7 +113,7 @@ module potential
 
         double precision                    ::  rho(n_atoms_max), rij(3), r
         double precision                    ::  rep, band, tmp
-        double precision                    ::  A, xi, p, q, r0, rc1, rc2, x5, x4, x3, a5, a4, a3
+        double precision                    ::  a, xi, p, q, r0, rc1, rc2, x5, x4, x3, a5, a4, a3
         integer                             ::  i_atom, j_atom
 
         rho(1:n_atoms) = 0.0d0
@@ -129,13 +129,13 @@ module potential
                     r0 = tbsma_r0(typ(i_atom), typ(j_atom))
                     rc1 = tbsma_rc1(typ(i_atom), typ(j_atom))
                     rc2 = tbsma_rc2(typ(i_atom), typ(j_atom))
-                    a5 = tbsma_a5(typ(i_atom), typ(j_atom))
-                    a4 = tbsma_a4(typ(i_atom), typ(j_atom))
-                    a3 = tbsma_a3(typ(i_atom), typ(j_atom))
+                    x5 = tbsma_x5(typ(i_atom), typ(j_atom))
+                    x4 = tbsma_x4(typ(i_atom), typ(j_atom))
+                    x3 = tbsma_x3(typ(i_atom), typ(j_atom))
 
                     if (r .lt. tbsma_rc2(typ(i_atom), typ(j_atom))) then
                         if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
-                            tmp = a5*(r-rc2)**5 + a4*(r-rc2)**4 + a3*(r-rc2)**3
+                            tmp = x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3
                             rho(i_atom) = rho(i_atom) + tmp
                             rho(j_atom) = rho(j_atom) + tmp
                         else
@@ -172,11 +172,11 @@ module potential
 
                 if (r .lt. tbsma_rc2(typ(i_atom), typ(j_atom))) then
                     if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
-                        rep = -2.0d0*(5*x5*(r-rc2)**4 + 4*x4*(r-rc2)**3 + 3*x3*(r-rc2)**2)
-                        band = (5*a5*(r-rc2)**4 + 4*a4*(r-rc2)**3 + 3*a3*(r-rc2)**2) &
+                        rep = 2.0d0*(5*a5*(r-rc2)**4 + 4*a4*(r-rc2)**3 + 3*a3*(r-rc2)**2)
+                        band = -(5*x5*(r-rc2)**4 + 4*x4*(r-rc2)**3 + 3*x3*(r-rc2)**2) &
                                 &* 0.5d0*(1.0d0/sqrt(rho(j_atom)) + 1.0d0/sqrt(rho(i_atom)))
                     else
-                        rep =  -2.0d0 * A * p/r0 * exp(-p * (r/r0 - 1.0d0))
+                        rep =  -2.0d0 * a * p/r0 * exp(-p * (r/r0 - 1.0d0))
                         band =  q * xi**2 / r0 * exp(-2.0d0 * q * (r/r0 - 1.0d0)) &
                                 &* (1.0d0/sqrt(rho(j_atom)) + 1.0d0/sqrt(rho(i_atom)))
                     endif
@@ -208,12 +208,12 @@ module potential
                 e2 = sum(epot)
                 pos(k, i_atom) = pos(k, i_atom) + h
                 force_num = -(e1 - e2) / (2.0d0 * h)
-                !if (abs(force(k, i_atom) - force_num)/ abs(force_num) .gt. 0.1d0) then
+                if (abs(force(k, i_atom) - force_num)/ abs(force_num) .gt. 1d-5) then
                     write(*, *) "Atom ", i_atom, "Direction ", k
                     write(*, *) "Analytical force :", force(k, i_atom)
                     write(*, *) "Numerical force  :", force_num
-                 !   stop "Force test failed!"
-                !endif
+                    stop "Force test failed!"
+                endif
             enddo
         enddo
     endsubroutine
