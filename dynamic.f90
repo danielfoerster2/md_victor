@@ -1,96 +1,60 @@
 module dynamic
 
-    use constants
     implicit none
+
     contains
 
+    subroutine v_init
+        use constants, only: mass, kb
+        use variables, only: n_atoms, vel, target_temperature, typ
+        double precision                ::  v_cm(3), e_kin, temperature_init
+        integer                         ::  i_atom
+
+        call random_number(vel(:, 1:n_atoms))
+        vel(:, 1:n_atoms) = vel(:, 1:n_atoms) - 0.5d0
+        v_cm = 0.0d0
+        do i_atom = 1, n_atoms
+            v_cm = v_cm + mass(typ(i_atom)) * vel(:, i_atom)
+        enddo
+        v_cm = v_cm / sum(mass(typ(1:n_atoms)))
+        e_kin = 0.0d0
+        do i_atom = 1, n_atoms
+            vel(:, i_atom) = vel(:, i_atom) - v_cm
+            e_kin = e_kin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
+        enddo
+        temperature_init = 2.0d0 * e_kin / ((3*n_atoms-3) * kb)
+        vel(:, 1:n_atoms) = vel(:, 1:n_atoms) * sqrt(target_temperature / temperature_init)
+    endsubroutine
 
 
-
-    function v_init(var, n_atoms, init_temp, Nf)
-        !========================================
-        ! Initialize the velocity of atoms
-        ! 
-        ! Parameters :
-        ! ------------
-        ! var : double precision 2D array
-        !       Properties of each atoms
-        ! n_atoms : integer
-        !       Number of atoms
-        ! init_temp : double precision
-        !       Initial temperature
-        ! Nf : integer
-        !       Degree of freedom
-        ! 
-        ! Returns :
-        ! ---------
-        ! double precision 2D array
-        !           Initial velocity of each atoms
-        !           Dim 1 : Number of atoms
-        !           Dim 2 : vx, vy, vz 
-        !========================================
-        implicit none
-        integer, intent(in)             ::  n_atoms, Nf
-        double precision, intent(in)    ::  init_temp, var(:,:)
-        double precision                ::  v_init(n_atoms,3), v_cm(3), ekin, temperature
-        integer                         ::  i
-        call random_number(v_init)
-        v_init = v_init - 0.5d0
-        v_cm = sum(v_init, dim=1) / n_atoms
-        do i = 1, n_atoms
-            v_init(i,:) = v_init(i,:) - v_cm
-        end do
-        ekin = 0.5d0 * sum(var(:,6)*sum(v_init**2, dim=2))
-        temperature = 2.0d0 * ekin / (Nf * kb)
-        v_init = v_init * sqrt(init_temp / temperature)
-    end function v_init
-
-
-    subroutine verlet_velocity(var, pos, v, accel, dt, ekin, box)
-        use constants, only: mass
-        use variables, only: n_atoms, typ, force
+    subroutine verlet_velocity
+        use constants, only: mass, dt
+        use variables, only: n_atoms, typ, force, vel, pos
         use potential, only: force_tbsma
 
-        !========================================
-        ! Implement the Verlet velocity scheme
-        ! 
-        ! Parameters :
-        ! ------------
-        ! var : double precision 2D array
-        !       Properties of each atoms
-        ! pos : 2D array
-        !       Coordinates of atoms
-        ! v : 2D array
-        !       Velocities of atoms
-        ! accel : 2D array
-        !       Acceleration of atoms
-        ! dt : double precision
-        !       Step time
-        ! ekin : double precision
-        !       Kinetic energy
-        !
-        ! Returns :
-        ! ---------
-        ! None
-        !========================================
-        implicit none
-        double precision, intent(inout)     ::  var(:,:), pos(:,:), v(:,:), accel(:,:)
-        double precision, intent(inout)     ::  ekin
-        double precision, intent(in)        ::  dt, box(3)
         integer                             ::  i_atom
-        pos = pos + v*dt + accel*dt**2/ 2.0d0
-        v = v + accel * dt/2.0d0
-        call force_tbsma
+        logical, save                       ::  first_call = .true.
+
+        if (first_call) then
+            call force_tbsma
+            first_call = .false.
+        endif
+
         do i_atom = 1, n_atoms
-            accel(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
-        end do
-        v = v + accel * dt/2.0d0
-        ekin = 0.5d0*sum(var(:,6)*sum(v**2, dim=2))
-    end subroutine verlet_velocity
+            pos(:, i_atom) = pos(:, i_atom) + vel(:, i_atom)*dt + force(:, i_atom)/mass(typ(i_atom)) * dt**2/2.0d0
+            vel(:, i_atom) = vel(:, i_atom) + force(:, i_atom)/mass(typ(i_atom)) * dt/2.0d0
+        enddo
+
+        call force_tbsma
+
+        do i_atom = 1, n_atoms
+            vel(:, i_atom) = vel(:, i_atom) + force(:, i_atom)/mass(typ(i_atom)) * dt/2.0d0
+        enddo
+    endsubroutine verlet_velocity
 
 
     subroutine nose_hoover(var, pos, v, accel, x_thermo, v_thermo, target_temp, Qth, dt, Nf, ekin, box)
-        use constants, only: mass
+        use constants, only: mass, kb
         use variables, only: n_atoms, typ, force
         use potential, only: force_tbsma
         !========================================

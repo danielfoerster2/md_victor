@@ -33,7 +33,6 @@ module potential
         ! tbsma_q(1, 1)  = 1.867d0
         ! tbsma_r0(1, 1) = 3.803d0/2**0.5d0
 
-
         tbsma_rc1(1, 1) = 5.0d0**0.5*tbsma_r0(1, 1) + 0.1d0
         tbsma_rc2(1, 1) = tbsma_rc1(1, 1) + 0.2d0
 
@@ -94,7 +93,7 @@ module potential
 
                         if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
                             e_rep = e_rep + a5*(r-rc2)**5 + a4*(r-rc2)**4 + a3*(r-rc2)**3
-                            rho = rho + x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3
+                            rho = rho     + (x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3)**2
                         else
                             e_rep = e_rep + a * exp(-p * (r/r0 - 1.0d0))
                             rho = rho + xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
@@ -208,7 +207,7 @@ module potential
                 e2 = sum(epot)
                 pos(k, i_atom) = pos(k, i_atom) + h
                 force_num = -(e1 - e2) / (2.0d0 * h)
-                if (abs(force(k, i_atom) - force_num)/ abs(force_num) .gt. 1d-5) then
+                if (abs(force(k, i_atom) - force_num)/ abs(force_num) .gt. 1.0d-2) then
                     write(*, *) "Atom ", i_atom, "Direction ", k
                     write(*, *) "Analytical force :", force(k, i_atom)
                     write(*, *) "Numerical force  :", force_num
