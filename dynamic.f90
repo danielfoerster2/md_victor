@@ -1,42 +1,10 @@
 module dynamic
 
     use constants
-    use force
     implicit none
     contains
 
 
-    function acceleration(var, pos, box)
-        !========================================
-        ! Compute the acceleration of atoms
-        ! 
-        ! Parameters :
-        ! ------------
-        ! var : double precision 2D array
-        !       Properties of atoms
-        !       Dim 1 : Number of atoms
-        !       Dim 2 : Properties
-        ! pos : double precision 2D array
-        !       Positions of atoms
-        !       Dim 1 : Number of atoms
-        !       Dim 2 : x, y, z coordinates
-        ! 
-        ! Returns :
-        ! ---------
-        ! double precision 2D array
-        !           Acceleration of each atoms
-        !           Dim 1 : Number of atoms
-        !           Dim 2 : ax, ay, az 
-        !========================================
-        implicit none
-        double precision, intent(in)        ::  var(:,:), pos(:,:), box(3)
-        double precision                    ::  acceleration(size(pos,dim=1), 3), f(size(pos,dim=1),3)
-        integer                             ::  i
-        f = force_tbsma(var, pos, box, .true.)
-        do i = 1, size(pos,dim=1)
-            acceleration(i,:) = f(i,:) / var(i,6)
-        end do
-    end function acceleration
 
 
     function v_init(var, n_atoms, init_temp, Nf)
@@ -79,6 +47,10 @@ module dynamic
 
 
     subroutine verlet_velocity(var, pos, v, accel, dt, ekin, box)
+        use constants, only: mass
+        use variables, only: n_atoms, typ, force
+        use potential, only: force_tbsma
+
         !========================================
         ! Implement the Verlet velocity scheme
         ! 
@@ -105,15 +77,22 @@ module dynamic
         double precision, intent(inout)     ::  var(:,:), pos(:,:), v(:,:), accel(:,:)
         double precision, intent(inout)     ::  ekin
         double precision, intent(in)        ::  dt, box(3)
+        integer                             ::  i_atom
         pos = pos + v*dt + accel*dt**2/ 2.0d0
         v = v + accel * dt/2.0d0
-        accel = acceleration(var, pos, box)
+        call force_tbsma
+        do i_atom = 1, n_atoms
+            accel(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
+        end do
         v = v + accel * dt/2.0d0
         ekin = 0.5d0*sum(var(:,6)*sum(v**2, dim=2))
     end subroutine verlet_velocity
 
 
     subroutine nose_hoover(var, pos, v, accel, x_thermo, v_thermo, target_temp, Qth, dt, Nf, ekin, box)
+        use constants, only: mass
+        use variables, only: n_atoms, typ, force
+        use potential, only: force_tbsma
         !========================================
         ! Implement the Nose-Hoover thermostat
         ! 
@@ -151,12 +130,15 @@ module dynamic
         integer, intent(in)                     ::  Nf
         double precision                        ::  g_new, g, v_thermo_new, v_thermo_old, ekin_new
         double precision                        ::  v_k(size(pos, dim=1), 3), accel_new(size(accel, dim=1), 3)
-        integer                                 ::  k
+        integer                                 ::  k, i_atom
         ekin_new = 0.5d0*sum(var(:,6)*sum(v**2, dim=2))
         g = (sum(var(:,6)*sum(v**2, dim=2)) - Nf*kb*target_temp) / Qth
         v_thermo_old = -dt * g
         pos = pos + v*dt + (accel - v*v_thermo)*0.5d0*dt**2
-        accel_new = acceleration(var, pos, box)
+        call force_tbsma
+        do i_atom = 1, n_atoms
+            accel_new(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
+        end do
         x_thermo = x_thermo + v_thermo*dt + 0.5d0*g*dt**2
         v_thermo_new = v_thermo_old + 2.0d0*g*dt
         do k = 1, 50

@@ -1,12 +1,12 @@
 SHELL = /bin/sh
-Objects = constants.o potential.o force.o file_io.o dynamic.o main.o
+Objects = constants.o potential.o file_io.o dynamic.o main.o
 Program = main
 FCOMP = gfortran
 
 DEBUG ?= 0
 
 ifeq ($(DEBUG), 1)
-FFLAGS = -fcheck=all -Wextra
+FFLAGS = -fcheck=all -Wextra -Wall -O0 -g -cpp -fbounds-check -Wuninitialized -Wimplicit-interface -Wsurprising
 else
 FFLAGS = -O3 -ffast-math -fno-protect-parens -cpp
 endif
@@ -26,13 +26,10 @@ file_io.o:	file_io.f90 constants.o Makefile
 potential.o:	potential.f90 constants.o Makefile
 	$(FCOMP) $(FFLAGS) -c $<
 
-force.o:		force.f90 constants.o potential.o Makefile
+dynamic.o:		dynamic.f90 constants.o Makefile
 	$(FCOMP) $(FFLAGS) -c $<
 
-dynamic.o:		dynamic.f90 constants.o force.o Makefile
-	$(FCOMP) $(FFLAGS) -c $<
-
-main.o:			main.f90 constants.o file_io.o potential.o force.o dynamic.o Makefile
+main.o:			main.f90 constants.o file_io.o potential.o dynamic.o Makefile
 	$(FCOMP) $(FFLAGS) -c $<
 
 

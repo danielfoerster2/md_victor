@@ -6,7 +6,7 @@ module file_io
 
     subroutine read_xyz
 
-        use constants, only: iel_to_typ, n_atoms_max, n_types
+        use constants, only: iel_to_typ, n_types
         use variables, only: n_atoms, pos, box, typ
 
         character(len=200)                                  ::  line
