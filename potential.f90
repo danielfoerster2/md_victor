@@ -149,6 +149,10 @@ module potential
 
         force = 0.0d0
         do i_atom = 1, n_atoms-1
+!            do j_neigh = 1, n_neigh_max
+!                j_atom = neigh(j_neigh, i_atom)
+!                if (j_atom .eq. 0) exit
+            
             do j_atom = i_atom+1, n_atoms
                 rij = pos(:, j_atom) - pos(:, i_atom)
                 rij = rij - box * nint(rij/box)
