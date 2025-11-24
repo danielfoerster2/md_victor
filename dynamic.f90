@@ -57,50 +57,49 @@ module dynamic
 
     subroutine nose_hoover
 
-        use constants, only: mass, kb, dt
-        use variables, only: n_atoms, typ, force, vel, target_temperature, pos, epot
-        use potential, only: force_tbsma
+        use constants, only: mass, kb, dt, n_atoms_max, omega
+        use variables, only: n_atoms, typ, force, vel, target_temperature, pos, epot, Qth
+        use potential, only: force_tbsma, epot_tbsma
 
         implicit none
 
-        double precision                        ::  g_new, g, v_thermo_new, v_thermo_old, ekin, ekin_new
-        double precision                        ::  accel(3, n_atoms), accel_new(3, n_atoms), vk(3, n_atoms), eth, Qth
+        double precision                        ::  g_new, v_thermo_new, ekin_new
+        double precision                        ::  accel_new(3, n_atoms), vk(3, n_atoms), eth
         integer                                 ::  k, i_atom
-        double precision, save                  ::  omega=0.1d0
-        double precision, save                  ::  v_thermo = 0.0d0, x_thermo = 0.0d0
+        double precision, save                  ::  accel(3, n_atoms_max), g, ekin
+        double precision, save                  ::  v_thermo = 0.0d0, x_thermo = 0.0d0, v_thermo_old
         logical, save                           ::  first_call = .true.
 
         if (first_call) then
+            ekin = 0.0d0
+            do i_atom = 1, n_atoms
+                ekin = ekin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
+            enddo
+            Qth = (3*n_atoms-3)*kb*target_temperature / (omega**2)
+            g = (2.0d0*ekin - (3*n_atoms-3)*kb*target_temperature) / Qth
+            v_thermo_old = -dt * g
+
             call force_tbsma
+            do i_atom = 1, n_atoms
+                accel(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
+            enddo
             first_call = .false.
         endif
 
-        Qth = (3*n_atoms-3)*kb*target_temperature / omega**2
-        ekin = 0.0d0
-        do i_atom = 1, n_atoms
-            ekin = ekin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
-        enddo
-        g = (2.0d0*ekin - (3*n_atoms-3)*kb*target_temperature) / Qth
-
-        v_thermo_old = -dt * g
-
-        do i_atom = 1, n_atoms
-            accel(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
-        enddo
         pos(:, 1:n_atoms) = pos(:, 1:n_atoms) + vel(:, 1:n_atoms)*dt + (accel(:, 1:n_atoms)-vel(:, 1:n_atoms)*v_thermo)*0.5d0*dt**2
 
-        call force_tbsma
+        x_thermo = x_thermo + v_thermo*dt + 0.5d0*g*dt**2
 
+        call force_tbsma
         do i_atom = 1, n_atoms
             accel_new(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
         enddo
 
-        x_thermo = x_thermo + v_thermo*dt + 0.5d0*g*dt**2
         v_thermo_new = v_thermo_old + 2.0d0*g*dt
 
         do k = 1, 50
-            vk = 1.0d0 / (1.0d0 + v_thermo_new*0.5d0*dt)*(vel(:, 1:n_atoms) + (accel + accel_new - vel(:, 1:n_atoms)*v_thermo)&
-                    &*0.5d0*dt)
+            vk = 1.0d0 / (1.0d0 + v_thermo_new*0.5d0*dt)*(vel(:, 1:n_atoms) + (accel(:, 1:n_atoms) + accel_new &
+                    &- vel(:, 1:n_atoms)*v_thermo)*0.5d0*dt)
 
             ekin_new = 0.0d0
             do i_atom = 1, n_atoms
@@ -112,13 +111,16 @@ module dynamic
             if((abs((ekin-ekin_new)/ekin_new) .lt. 1.0d-10).and.(k.ne.1)) exit
             ekin = ekin_new
         enddo
-        g = g_new
+
         v_thermo_old = v_thermo
         v_thermo = v_thermo_new
         vel(:, 1:n_atoms) = vk
-        accel = accel_new
+        g = g_new
+        accel(:, 1:n_atoms) = accel_new
+
         eth = Qth*v_thermo**2 / 2.0d0 + (3*n_atoms-3)*kb*target_temperature*x_thermo
-        write(*,*) 'Energy:', eth+ekin + sum(epot(1:n_atoms))
+        call epot_tbsma
+        write(*, *) 'Energy:', eth+ekin + sum(epot(1:n_atoms))
     endsubroutine
 
 

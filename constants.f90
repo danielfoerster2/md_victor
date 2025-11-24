@@ -15,6 +15,7 @@ module constants
     double precision, parameter     ::  mass(n_types) = (/58.6934d0, 63.546d0, 102.9055d0, 106.42d0, 195.084d0/) * convert_mass
 
     double precision, parameter     ::  kb = 8.617d-5 ! Boltzmann constant (eV/K)
+    double precision, parameter     ::  omega = 0.1d0 ! Nose-Hoover frequency (1/fs)
     double precision, parameter     ::  dt = 1.0d0 ! Time step (fs)
     character(len=2), parameter     ::  iel_to_typ(n_types) = (/'Ni', 'Cu', 'Rh', 'Pd', 'Pt' /)
 
@@ -34,5 +35,5 @@ module variables
 
     integer                         ::  typ(n_atoms_max), n_atoms
     double precision                ::  box(3), pos(3, n_atoms_max), vel(3, n_atoms_max), epot(n_atoms_max), force(3, n_atoms_max)
-    double precision                ::  target_temperature, time
+    double precision                ::  target_temperature, time, Qth
 endmodule
