@@ -1,0 +1,87 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+\begin{document}
+
+\section*{Force Calculation for General Interatomic Potential}
+
+We define a general potential composed of a repulsive pairwise function $\phi(r)$ and an attractive many-body term dependent on the square root of the local density $\rho$.
+
+\subsection*{Definitions}
+Let the total potential energy $V_{total}$ be defined as:
+\begin{equation}
+    V_{total} = \left[ \sum_{i,j \neq i} \phi(r_{ij}) - \sum_{i} \sqrt{\rho_i} \right]
+\end{equation}
+Where the local density $\rho_i$ is a sum of arbitrary density functions $\psi(r)$:
+\begin{equation}
+    \rho_i = \sum_{j \neq i} \psi(r_{ij})
+\end{equation}
+The distance vectors are defined as $\vec{r}_{ij} = \vec{r}_j - \vec{r}_i$, with magnitude $r_{ij} = |\vec{r}_{ij}|$.
+
+The gradient of the distance $r_{ij}$ with respect to the coordinates of atom $k$ is given by:
+\begin{equation}
+    \nabla_k r_{ij} = \frac{\vec{r}_{ij}}{r_{ij}} (\delta_{jk} - \delta_{ik})
+\end{equation}
+
+\subsection*{Derivation}
+The force on atom $k$, denoted as $\vec{F}_k$, is the negative gradient of the potential with respect to the coordinates of atom $k$:
+\[
+    \vec{F}_k = -\nabla_k V_{total}
+\]
+
+Applying the gradient operator $\nabla_k$:
+
+\begin{align*}
+    \vec{F}_k &= - \nabla_k \left[ \sum_{i,j} (1-\delta_{ij}) \phi(r_{ij}) - \sum_{i} \sqrt{\sum_{j} (1-\delta_{ij}) \psi(r_{ij})} \right] \\
+    % Step 2: Chain rule application
+    &= - \left[ \sum_{i,j} (1-\delta_{ij}) \phi'(r_{ij}) \nabla_k r_{ij} - \sum_{i} \frac{1}{2\sqrt{\rho_i}} \nabla_k \rho_i \right] \\
+    % Step 3: Derivative of r_ij
+    &= - \left[ \sum_{i,j} (1-\delta_{ij}) \phi'(r_{ij}) \frac{\vec{r}_{ij}}{r_{ij}} (\delta_{jk} - \delta_{ik}) \right. \\
+    &\quad \left. - \sum_{i} \frac{1}{2\sqrt{\rho_i}} \sum_{j} (1-\delta_{ij}) \psi'(r_{ij}) \frac{\vec{r}_{ij}}{r_{ij}} (\delta_{jk} - \delta_{ik}) \right] \\
+    % Step 4: Resolving Kronecker deltas (Image Style)
+    &= - \left[ \sum_{j} (1-\delta_{kj}) \phi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}} (\delta_{jk} - 1) + \sum_{i \neq k, j} (1-\delta_{ij}) \phi'(r_{ij}) \frac{\vec{r}_{ij}}{r_{ij}} (\delta_{jk}) \right. \\
+    &\quad \left. - \sum_{i} \frac{1}{2\sqrt{\rho_i}} \left( (1-\delta_{ik}) \psi'(r_{ik}) \frac{\vec{r}_{ik}}{r_{ik}} (1-\delta_{ik}) + \sum_{j \neq k} (1-\delta_{ij}) \psi'(r_{ij}) \frac{\vec{r}_{ij}}{r_{ij}} (-\delta_{ik}) \right) \right]
+\end{align*}
+
+Grouping by index $k$ and simplifying (resolving the remaining deltas):
+
+\begin{align*}
+    \vec{F}_k &= - \left[ \sum_{j \neq k} \phi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}} (-1) + \sum_{i \neq k} \phi'(r_{ik}) \frac{\vec{r}_{ik}}{r_{ik}} \right] \\
+    &\quad + \frac{1}{2} \left[ \sum_{i \neq k} \frac{1}{\sqrt{\rho_i}} \psi'(r_{ik}) \frac{\vec{r}_{ik}}{r_{ik}} + \frac{1}{\sqrt{\rho_k}} \sum_{j \neq k} \psi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}} (-1) \right]
+\end{align*}
+
+Using the property that $\vec{r}_{ik} = - \vec{r}_{ki}$ (and thus $\frac{\vec{r}_{ik}}{r_{ik}} = - \frac{\vec{r}_{ki}}{r_{ki}}$) to unify terms:
+
+\begin{align*}
+    \vec{F}_k &= - \left[ - \sum_{j \neq k} \phi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}} + \sum_{i \neq k} \phi'(r_{ik}) \left( - \frac{\vec{r}_{ki}}{r_{ki}} \right) \right] \\
+    &\quad + \frac{1}{2} \left[ \sum_{i \neq k} \frac{1}{\sqrt{\rho_i}} \psi'(r_{ik}) \left( - \frac{\vec{r}_{ki}}{r_{ki}} \right) - \sum_{j \neq k} \frac{1}{\sqrt{\rho_k}} \psi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}} \right]
+\end{align*}
+
+Renaming index $i \to j$ in the second sums to match terms:
+
+\begin{align*}
+    \vec{F}_k &= - \left[ - \sum_{j \neq k} \phi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}} - \sum_{j \neq k} \phi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}} \right] \\
+    &\quad - \frac{1}{2} \sum_{j \neq k} \left( \frac{1}{\sqrt{\rho_j}} + \frac{1}{\sqrt{\rho_k}} \right) \psi'(r_{kj}) \frac{\vec{r}_{kj}}{r_{kj}}
+\end{align*}
+
+\subsection*{Final Result}
+\begin{equation}
+    \vec{F}_k = - \sum_{j \neq k} \left[ -2 \phi'(r_{kj}) + \frac{1}{2} \left( \rho_j^{-1/2} + \rho_k^{-1/2} \right) \psi'(r_{kj}) \right] \frac{\vec{r}_{kj}}{r_{kj}}
+\end{equation}
+(Note: The negative sign from the repulsive term cancels with the outer negative gradient, resulting in a positive repulsive force contribution if $\phi'$ is negative).
+
+Simplifying signs:
+\begin{equation}
+    \vec{F}_k = \sum_{j \neq k} \left[ 2 \phi'(r_{kj}) - \frac{1}{2} \left( \rho_j^{-1/2} + \rho_k^{-1/2} \right) \psi'(r_{kj}) \right] \frac{\vec{r}_{kj}}{r_{kj}}
+\end{equation}
+
+Where:
+\begin{itemize}
+    \item $\phi'(r) = \frac{d\phi}{dr}$
+    \item $\psi'(r) = \frac{d\psi}{dr}$
+\end{itemize}
+
+\end{document}

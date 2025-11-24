@@ -12,3 +12,5 @@ input.xyz
 variables.mod
 file_io.mod
 data.dat
+force.aux
+force.log

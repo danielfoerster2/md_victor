@@ -77,7 +77,6 @@ module file_io
         do i_atom = 1, n_atoms
             e_kin = e_kin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
         enddo
-        write(*,*) sum(epot(1:n_atoms)) + e_kin, sum(epot(1:n_atoms)) , e_kin
 
         if (first_call) then
             open(10, file="data.dat", status='replace')

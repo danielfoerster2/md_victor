@@ -17,7 +17,9 @@ for i in range(n_atoms):
         coord = np.random.uniform(0, box_length, 3)
         not_ok = False
         for j in range(i):
-            if np.linalg.norm(coord - xyz[j, :]) < 2.0:
+            d = coord - xyz[j, :]
+            d = d - box_length * np.round(d / box_length)
+            if np.linalg.norm(d) < 2.0:
                 not_ok = True
                 break
     xyz[i, :] = coord

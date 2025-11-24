@@ -1,7 +1,7 @@
 program main
     use variables, only: target_temperature, time
     use constants, only: dt, n_steps, use_thermostat
-    use potential, only: init_tbsma
+    use potential, only: init_tbsma, test_force_tbsma
     use file_io, only: read_xyz, save_xyz, save_data
     use dynamic, only: v_init, verlet_velocity, nose_hoover
 
