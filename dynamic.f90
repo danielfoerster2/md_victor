@@ -11,7 +11,6 @@ module dynamic
         integer                         ::  i_atom
 
         call random_number(vel(:, 1:n_atoms))
-        vel(:, 1:n_atoms) = vel(:, 1:n_atoms) - 0.5d0
         v_cm = 0.0d0
         do i_atom = 1, n_atoms
             v_cm = v_cm + mass(typ(i_atom)) * vel(:, i_atom)
@@ -33,6 +32,7 @@ module dynamic
         use potential, only: force_tbsma
 
         integer                             ::  i_atom
+        double precision                    ::  a(3)
         logical, save                       ::  first_call = .true.
 
         if (first_call) then
@@ -41,8 +41,9 @@ module dynamic
         endif
 
         do i_atom = 1, n_atoms
-            pos(:, i_atom) = pos(:, i_atom) + vel(:, i_atom)*dt + force(:, i_atom)/mass(typ(i_atom)) * dt**2/2.0d0
-            vel(:, i_atom) = vel(:, i_atom) + force(:, i_atom)/mass(typ(i_atom)) * dt/2.0d0
+            a = force(:, i_atom)/mass(typ(i_atom))
+            pos(:, i_atom) = pos(:, i_atom) + vel(:, i_atom)*dt + a*dt**2/2.0d0
+            vel(:, i_atom) = vel(:, i_atom) + a*dt/2.0d0
         enddo
 
         call force_tbsma
@@ -50,75 +51,75 @@ module dynamic
         do i_atom = 1, n_atoms
             vel(:, i_atom) = vel(:, i_atom) + force(:, i_atom)/mass(typ(i_atom)) * dt/2.0d0
         enddo
-    endsubroutine verlet_velocity
+
+    endsubroutine
 
 
-    subroutine nose_hoover(var, pos, v, accel, x_thermo, v_thermo, target_temp, Qth, dt, Nf, ekin, box)
-        use constants, only: mass, kb
-        use variables, only: n_atoms, typ, force
+    subroutine nose_hoover
+
+        use constants, only: mass, kb, dt
+        use variables, only: n_atoms, typ, force, vel, target_temperature, pos, epot
         use potential, only: force_tbsma
-        !========================================
-        ! Implement the Nose-Hoover thermostat
-        ! 
-        ! Parameters :
-        ! ------------
-        ! pos : 2D array
-        !       Coordinates of atoms
-        ! v : 2D array
-        !       Velocities of atoms
-        ! accel : 2D array
-        !       Acceleration of atoms
-        ! x_thermo : double precision
-        !       Coordinate from the thermostat
-        ! v_thermo : double precision
-        !       velocity from the thermostat
-        ! target_temp : double precision
-        !       Target temperature (K)
-        ! Qth : double precision
-        !       "Mass" of the thermostat
-        ! dt : double precision
-        !       Step time
-        ! Nf : integer
-        !       Degree of freedom
-        ! ekin : Double precision
-        !       Kinetic energy of the system
-        ! 
-        ! Returns :
-        ! ---------
-        ! None
-        !========================================
+
         implicit none
-        double precision, intent(inout)         ::  pos(:,:), v(:,:), accel(:,:)
-        double precision, intent(inout)         ::  v_thermo, x_thermo, ekin
-        double precision, intent(in)            ::  var(:,:), target_temp, Qth, dt, box(3)
-        integer, intent(in)                     ::  Nf
-        double precision                        ::  g_new, g, v_thermo_new, v_thermo_old, ekin_new
-        double precision                        ::  v_k(size(pos, dim=1), 3), accel_new(size(accel, dim=1), 3)
+
+        double precision                        ::  g_new, g, v_thermo_new, v_thermo_old, ekin, ekin_new
+        double precision                        ::  accel(3, n_atoms), accel_new(3, n_atoms), vk(3, n_atoms), eth, Qth
         integer                                 ::  k, i_atom
-        ekin_new = 0.5d0*sum(var(:,6)*sum(v**2, dim=2))
-        g = (sum(var(:,6)*sum(v**2, dim=2)) - Nf*kb*target_temp) / Qth
+        double precision, save                  ::  omega=0.1d0
+        double precision, save                  ::  v_thermo = 0.0d0, x_thermo = 0.0d0
+        logical, save                           ::  first_call = .true.
+
+        if (first_call) then
+            call force_tbsma
+            first_call = .false.
+        endif
+
+        Qth = (3*n_atoms-3)*kb*target_temperature / omega**2
+        ekin = 0.0d0
+        do i_atom = 1, n_atoms
+            ekin = ekin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
+        enddo
+        g = (2.0d0*ekin - (3*n_atoms-3)*kb*target_temperature) / Qth
+
         v_thermo_old = -dt * g
-        pos = pos + v*dt + (accel - v*v_thermo)*0.5d0*dt**2
+
+        do i_atom = 1, n_atoms
+            accel(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
+        enddo
+        pos(:, 1:n_atoms) = pos(:, 1:n_atoms) + vel(:, 1:n_atoms)*dt + (accel(:, 1:n_atoms)-vel(:, 1:n_atoms)*v_thermo)*0.5d0*dt**2
+
         call force_tbsma
+
         do i_atom = 1, n_atoms
             accel_new(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
-        end do
+        enddo
+
         x_thermo = x_thermo + v_thermo*dt + 0.5d0*g*dt**2
         v_thermo_new = v_thermo_old + 2.0d0*g*dt
+
         do k = 1, 50
-            v_k = 1.0d0 / (1.0d0 + v_thermo_new*0.5d0*dt)*(v + (accel + accel_new - v*v_thermo)*0.5d0*dt)
-            ekin_new = 0.5d0*sum(var(:,6)*sum(v_k**2, dim=2))
-            g_new = (sum(var(:,6)*sum(v_k**2, dim=2)) - Nf*kb*target_temp) / Qth
+            vk = 1.0d0 / (1.0d0 + v_thermo_new*0.5d0*dt)*(vel(:, 1:n_atoms) + (accel + accel_new - vel(:, 1:n_atoms)*v_thermo)&
+                    &*0.5d0*dt)
+
+            ekin_new = 0.0d0
+            do i_atom = 1, n_atoms
+                ekin_new = ekin_new + 0.5d0 * mass(typ(i_atom)) * sum(vk(:, i_atom)**2)
+            enddo
+
+            g_new = (2.0d0* ekin_new - (3*n_atoms-3)*kb*target_temperature) / Qth
             v_thermo_new = v_thermo + (g + g_new)*0.5d0*dt
             if((abs((ekin-ekin_new)/ekin_new) .lt. 1.0d-10).and.(k.ne.1)) exit
             ekin = ekin_new
-        end do
+        enddo
         g = g_new
         v_thermo_old = v_thermo
         v_thermo = v_thermo_new
-        v = v_k
+        vel(:, 1:n_atoms) = vk
         accel = accel_new
-    end subroutine nose_hoover
+        eth = Qth*v_thermo**2 / 2.0d0 + (3*n_atoms-3)*kb*target_temperature*x_thermo
+        write(*,*) 'Energy:', eth+ekin + sum(epot(1:n_atoms))
+    endsubroutine
 
 
 

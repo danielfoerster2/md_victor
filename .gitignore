@@ -1,13 +1,14 @@
 main.o
-potential.o
 file_io.o
 dynamic.o
 dynamic.mod
 main
-force.o
-force.mod
+potential.o
+potential.mod
 constants.mod
 constants.o
 movie.xyz
+input.xyz
 variables.mod
 file_io.mod
+data.dat

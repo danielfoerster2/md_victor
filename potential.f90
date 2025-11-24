@@ -33,8 +33,8 @@ module potential
         ! tbsma_q(1, 1)  = 1.867d0
         ! tbsma_r0(1, 1) = 3.803d0/2**0.5d0
 
-        tbsma_rc1(1, 1) = 5.0d0**0.5*tbsma_r0(1, 1) + 0.1d0
-        tbsma_rc2(1, 1) = tbsma_rc1(1, 1) + 0.2d0
+        tbsma_rc1(1, 1) = 5.0d0**0.5*tbsma_r0(1, 1) + 0.05d0
+        tbsma_rc2(1, 1) = tbsma_rc1(1, 1) + 0.3d0
 
         ar =-tbsma_a(1, 1)*exp(-tbsma_p(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))**3
         br =-(tbsma_p(1, 1)/tbsma_r0(1, 1))*tbsma_a(1, 1)*exp(-tbsma_p(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))/(tbsma_rc2(1, 1)&
@@ -134,7 +134,7 @@ module potential
 
                     if (r .lt. tbsma_rc2(typ(i_atom), typ(j_atom))) then
                         if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
-                            tmp = x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3
+                            tmp = (x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3)**2
                             rho(i_atom) = rho(i_atom) + tmp
                             rho(j_atom) = rho(j_atom) + tmp
                         else
@@ -173,7 +173,8 @@ module potential
                     if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
                         rep = 2.0d0*(5*a5*(r-rc2)**4 + 4*a4*(r-rc2)**3 + 3*a3*(r-rc2)**2)
                         band = -(5*x5*(r-rc2)**4 + 4*x4*(r-rc2)**3 + 3*x3*(r-rc2)**2) &
-                                &* 0.5d0*(1.0d0/sqrt(rho(j_atom)) + 1.0d0/sqrt(rho(i_atom)))
+                                &*(x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3) &
+                                &* (1.0d0/sqrt(rho(j_atom)) + 1.0d0/sqrt(rho(i_atom)))
                     else
                         rep =  -2.0d0 * a * p/r0 * exp(-p * (r/r0 - 1.0d0))
                         band =  q * xi**2 / r0 * exp(-2.0d0 * q * (r/r0 - 1.0d0)) &
@@ -191,7 +192,7 @@ module potential
 
         use variables, only: pos, epot, n_atoms, force
 
-        double precision, parameter         ::  h = 1.0d-4
+        double precision, parameter         ::  h = 1.0d-5
         double precision                    ::  force_num, e1, e2
         integer                             ::  i_atom, k
 
@@ -207,7 +208,7 @@ module potential
                 e2 = sum(epot)
                 pos(k, i_atom) = pos(k, i_atom) + h
                 force_num = -(e1 - e2) / (2.0d0 * h)
-                if (abs(force(k, i_atom) - force_num)/ abs(force_num) .gt. 1.0d-2) then
+                if (abs(force(k, i_atom) - force_num)/ abs(force_num + 1.0d-5) .gt. 1.0d-2) then
                     write(*, *) "Atom ", i_atom, "Direction ", k
                     write(*, *) "Analytical force :", force(k, i_atom)
                     write(*, *) "Numerical force  :", force_num

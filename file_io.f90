@@ -64,25 +64,31 @@ module file_io
     endsubroutine
 
 
-    subroutine save_data(n_atoms, time, epot, ekin, eth, box)
+    subroutine save_data
+        use variables, only: n_atoms, epot, vel, time, typ
+        use constants, only: mass
+        use potential, only: epot_tbsma
+        double precision                :: e_kin
+        integer                         :: i_atom
+        logical, save                   :: first_call=.true.
 
-        implicit none
-        double precision, intent(in)    :: time, epot, ekin, eth, box(3)
-        integer, intent(in)             :: n_atoms
-        double precision                :: etot, volume
-        logical, save                   ::  first_call=.true.
-        etot = epot + ekin + eth
-        volume = box(1)*box(2)*box(3)
+        call epot_tbsma
+        e_kin = 0.0d0
+        do i_atom = 1, n_atoms
+            e_kin = e_kin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
+        enddo
+        write(*,*) sum(epot(1:n_atoms)) + e_kin, sum(epot(1:n_atoms)) , e_kin
+
         if (first_call) then
-            open(10, file="Data/data.csv", status='replace')
-            write(10, '(A)')'n_atoms,time,E_pot,E_kin,E_th,E_tot,volume'
+            open(10, file="data.dat", status='replace')
+            write(10, '(A)')'time, E_pot, E_kin'
             first_call = .false.
         else
-            open(10, file="Data/data.csv", status='old', position='append')
-        end if        
-        write(10, '(I10, ",", 5(ES22.15, ","),ES22.15)') n_atoms, time, epot, ekin, eth, etot, volume
-        close(10)
-    end subroutine save_data
+            open(10, file="data.dat", status='old', position='append')
+        endif
+        write(10, *) time, sum(epot(1:n_atoms)), e_kin
 
+        close(10)
+    endsubroutine
 
 end module

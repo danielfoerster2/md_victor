@@ -11,7 +11,7 @@ module constants
 
     integer, parameter              ::  n_atoms_max = 1000, n_steps = 1000
     double precision, parameter     ::  convert_mass = 1.0364269d2 ! 1 u = 1.0364269d2 eV.fs²/Angstrom²
-    integer, parameter              ::  n_types = 5, N=5
+    integer, parameter              ::  n_types = 5
     double precision, parameter     ::  mass(n_types) = (/58.6934d0, 63.546d0, 102.9055d0, 106.42d0, 195.084d0/) * convert_mass
 
     double precision, parameter     ::  kb = 8.617d-5 ! Boltzmann constant (eV/K)
@@ -24,19 +24,15 @@ module constants
                                         tbsma_rc2(n_types, n_types), &
                                         tbsma_x5(n_types, n_types), tbsma_x4(n_types, n_types), tbsma_x3(n_types, n_types), &
                                         tbsma_a5(n_types, n_types), tbsma_a4(n_types, n_types), tbsma_a3(n_types, n_types)
-
-
-    contains
-
+    logical, parameter              ::  use_thermostat = .true.
 endmodule
 
 
 module variables
-
     use constants, only: n_atoms_max
     implicit none
 
     integer                         ::  typ(n_atoms_max), n_atoms
     double precision                ::  box(3), pos(3, n_atoms_max), vel(3, n_atoms_max), epot(n_atoms_max), force(3, n_atoms_max)
-    double precision                ::  target_temperature
+    double precision                ::  target_temperature, time
 endmodule
