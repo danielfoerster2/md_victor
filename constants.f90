@@ -36,7 +36,6 @@ module variables
 
     integer                         ::  typ(n_atoms_max), n_atoms
     double precision                ::  box(3), pos(3, n_atoms_max), vel(3, n_atoms_max), epot(n_atoms_max), force(3, n_atoms_max)
-    double precision                ::  pos_old(3, n_atoms_max)
     double precision                ::  target_temperature, time, Qth
     integer                         ::  neigh(n_neigh_max, n_atoms_max), n_neigh(n_atoms_max)
 endmodule
