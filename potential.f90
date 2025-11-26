@@ -55,105 +55,22 @@ module potential
         tbsma_a3(1, 1) = (20*ar-8*br+cr)/2
     endsubroutine
 
+
     subroutine epot_tbsma
         use constants, only: tbsma_a, tbsma_xi, tbsma_p, tbsma_q, tbsma_r0, tbsma_rc1, tbsma_rc2
-        use variables, only: pos, box, n_atoms, epot, typ
+        use variables, only: pos, box, n_atoms, epot, typ, neigh, n_neigh
 
         implicit none
         double precision                    ::  rij(3), r
         double precision                    ::  a, xi, p, q, r0, rc1, rc2, x5, x4, x3, a5, a4, a3
         double precision                    ::  e_rep, rho
-        integer                             ::  i_atom, j_atom
+        integer                             ::  i_atom, j_atom, j_neigh
 
         do i_atom = 1, n_atoms
             e_rep = 0.0d0
             rho = 0.0d0
-            do j_atom = 1, n_atoms
-                if (i_atom .ne. j_atom) then
-                    rij = pos(:, j_atom) - pos(:, i_atom)
-                    rij = rij - box * nint(rij/box)
-                    r = norm2(rij)
-
-                    a = tbsma_a(typ(i_atom), typ(j_atom))
-                    xi = tbsma_xi(typ(i_atom), typ(j_atom))
-                    p = tbsma_p(typ(i_atom), typ(j_atom))
-                    q = tbsma_q(typ(i_atom), typ(j_atom))
-                    r0 = tbsma_r0(typ(i_atom), typ(j_atom))
-                    rc1 = tbsma_rc1(typ(i_atom), typ(j_atom))
-                    rc2 = tbsma_rc2(typ(i_atom), typ(j_atom))
-
-                    x5 = tbsma_x5(typ(i_atom), typ(j_atom))
-                    x4 = tbsma_x4(typ(i_atom), typ(j_atom))
-                    x3 = tbsma_x3(typ(i_atom), typ(j_atom))
-                    a5 = tbsma_a5(typ(i_atom), typ(j_atom))
-                    a4 = tbsma_a4(typ(i_atom), typ(j_atom))
-                    a3 = tbsma_a3(typ(i_atom), typ(j_atom))
-
-                    if (r .lt. tbsma_rc2(typ(i_atom), typ(j_atom))) then
-
-                        if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
-                            e_rep = e_rep + a5*(r-rc2)**5 + a4*(r-rc2)**4 + a3*(r-rc2)**3
-                            rho = rho     + (x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3)**2
-                        else
-                            e_rep = e_rep + a * exp(-p * (r/r0 - 1.0d0))
-                            rho = rho + xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
-                        endif
-                    endif
-                endif
-            enddo
-            epot(i_atom) = e_rep - sqrt(rho)
-        enddo
-    endsubroutine
-
-
-    subroutine force_tbsma
-        use constants, only: n_atoms_max
-        use variables, only: pos, box, n_atoms, typ, force
-
-        double precision                    ::  rho(n_atoms_max), rij(3), r
-        double precision                    ::  rep, band, tmp
-        double precision                    ::  a, xi, p, q, r0, rc1, rc2, x5, x4, x3, a5, a4, a3
-        integer                             ::  i_atom, j_atom
-
-        rho(1:n_atoms) = 0.0d0
-        do i_atom = 1, n_atoms-1
-            do j_atom = i_atom+1, n_atoms
-                if (i_atom .ne. j_atom) then
-                    rij = pos(:, j_atom) - pos(:, i_atom)
-                    rij = rij - box * nint(rij/box)
-                    r = norm2(rij)
-
-                    xi = tbsma_xi(typ(i_atom), typ(j_atom))
-                    q = tbsma_q(typ(i_atom), typ(j_atom))
-                    r0 = tbsma_r0(typ(i_atom), typ(j_atom))
-                    rc1 = tbsma_rc1(typ(i_atom), typ(j_atom))
-                    rc2 = tbsma_rc2(typ(i_atom), typ(j_atom))
-                    x5 = tbsma_x5(typ(i_atom), typ(j_atom))
-                    x4 = tbsma_x4(typ(i_atom), typ(j_atom))
-                    x3 = tbsma_x3(typ(i_atom), typ(j_atom))
-
-                    if (r .lt. tbsma_rc2(typ(i_atom), typ(j_atom))) then
-                        if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
-                            tmp = (x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3)**2
-                            rho(i_atom) = rho(i_atom) + tmp
-                            rho(j_atom) = rho(j_atom) + tmp
-                        else
-                            tmp = xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
-                            rho(i_atom) = rho(i_atom) + tmp
-                            rho(j_atom) = rho(j_atom) + tmp
-                        endif
-                    endif
-                endif
-            enddo
-        enddo
-
-        force = 0.0d0
-        do i_atom = 1, n_atoms-1
-!            do j_neigh = 1, n_neigh_max
-!                j_atom = neigh(j_neigh, i_atom)
-!                if (j_atom .eq. 0) exit
-            
-            do j_atom = i_atom+1, n_atoms
+            do j_neigh = 1, n_neigh(i_atom)
+                j_atom = neigh(j_neigh, i_atom)
                 rij = pos(:, j_atom) - pos(:, i_atom)
                 rij = rij - box * nint(rij/box)
                 r = norm2(rij)
@@ -172,9 +89,84 @@ module potential
                 a5 = tbsma_a5(typ(i_atom), typ(j_atom))
                 a4 = tbsma_a4(typ(i_atom), typ(j_atom))
                 a3 = tbsma_a3(typ(i_atom), typ(j_atom))
+                
+                if (r .lt. rc2) then
 
-                if (r .lt. tbsma_rc2(typ(i_atom), typ(j_atom))) then
-                    if (r .gt. tbsma_rc1(typ(i_atom), typ(j_atom))) then
+                    if (r .gt. rc1) then
+                        e_rep = e_rep + a5*(r-rc2)**5 + a4*(r-rc2)**4 + a3*(r-rc2)**3
+                        rho = rho     + (x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3)**2
+                    else
+                        e_rep = e_rep + a * exp(-p * (r/r0 - 1.0d0))
+                        rho = rho + xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
+                    endif
+                endif
+            enddo
+            epot(i_atom) = e_rep - sqrt(rho)
+        enddo
+    endsubroutine
+
+
+    subroutine force_tbsma
+        use constants, only: n_atoms_max
+        use variables, only: pos, box, n_atoms, typ, force, neigh, n_neigh
+
+        double precision                    ::  rho(n_atoms_max), rij(3), r
+        double precision                    ::  rep, band, tmp
+        double precision                    ::  a, xi, p, q, r0, rc1, rc2, x5, x4, x3, a5, a4, a3
+        integer                             ::  i_atom, j_atom, j_neigh
+
+        rho(1:n_atoms) = 0.0d0
+        do i_atom = 1, n_atoms
+            do j_neigh = 1, n_neigh(i_atom)
+                j_atom = neigh(j_neigh, i_atom)
+                rij = pos(:, j_atom) - pos(:, i_atom)
+                rij = rij - box * nint(rij/box)
+                r = norm2(rij)
+                xi = tbsma_xi(typ(i_atom), typ(j_atom))
+                q = tbsma_q(typ(i_atom), typ(j_atom))
+                r0 = tbsma_r0(typ(i_atom), typ(j_atom))
+                rc1 = tbsma_rc1(typ(i_atom), typ(j_atom))
+                rc2 = tbsma_rc2(typ(i_atom), typ(j_atom))
+                x5 = tbsma_x5(typ(i_atom), typ(j_atom))
+                x4 = tbsma_x4(typ(i_atom), typ(j_atom))
+                x3 = tbsma_x3(typ(i_atom), typ(j_atom))
+
+                if (r .lt. rc2) then
+                    if (r .gt. rc1) then
+                        tmp = (x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3)**2
+                    else
+                        tmp = xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
+                    endif
+                    rho(i_atom) = rho(i_atom) + tmp
+                endif
+            enddo
+        enddo
+
+        force(:, 1:n_atoms) = 0.0d0
+        do i_atom = 1, n_atoms
+            do j_neigh = 1, n_neigh(i_atom)
+                j_atom = neigh(j_neigh, i_atom)
+                if (j_atom .gt. i_atom) cycle
+                rij = pos(:, j_atom) - pos(:, i_atom)
+                rij = rij - box * nint(rij/box)
+                r = norm2(rij)
+                a = tbsma_a(typ(i_atom), typ(j_atom))
+                xi = tbsma_xi(typ(i_atom), typ(j_atom))
+                p = tbsma_p(typ(i_atom), typ(j_atom))
+                q = tbsma_q(typ(i_atom), typ(j_atom))
+                r0 = tbsma_r0(typ(i_atom), typ(j_atom))
+                rc1 = tbsma_rc1(typ(i_atom), typ(j_atom))
+                rc2 = tbsma_rc2(typ(i_atom), typ(j_atom))
+
+                x5 = tbsma_x5(typ(i_atom), typ(j_atom))
+                x4 = tbsma_x4(typ(i_atom), typ(j_atom))
+                x3 = tbsma_x3(typ(i_atom), typ(j_atom))
+                a5 = tbsma_a5(typ(i_atom), typ(j_atom))
+                a4 = tbsma_a4(typ(i_atom), typ(j_atom))
+                a3 = tbsma_a3(typ(i_atom), typ(j_atom))
+
+                if (r .lt. rc2) then
+                    if (r .gt. rc1) then
                         rep = 2.0d0*(5*a5*(r-rc2)**4 + 4*a4*(r-rc2)**3 + 3*a3*(r-rc2)**2)
                         band = -(5*x5*(r-rc2)**4 + 4*x4*(r-rc2)**3 + 3*x3*(r-rc2)**2) &
                                 &*(x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3) &
@@ -190,6 +182,7 @@ module potential
             enddo
         enddo
     endsubroutine
+
 
 
     subroutine test_force_tbsma

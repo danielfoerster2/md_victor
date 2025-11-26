@@ -29,7 +29,7 @@ module dynamic
     subroutine verlet_velocity
         use constants, only: mass, dt
         use variables, only: n_atoms, typ, force, vel, pos
-        use potential, only: force_tbsma
+        use potential, only: force_tbsma, epot_tbsma
 
         integer                             ::  i_atom
         double precision                    ::  a(3)
