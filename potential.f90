@@ -1,8 +1,14 @@
 module potential
 
-    use constants
+    use constants, only: n_types
 
     implicit none
+
+
+    integer, parameter      :: n_tab = 50000
+    double precision        :: tab_rho(n_types, n_types, n_tab), tab_drho(n_types, n_types, n_tab),&
+                                & tab_drep(n_types, n_types, n_tab)
+
 
     contains
  
@@ -11,6 +17,8 @@ module potential
         use constants, only: tbsma_a, tbsma_xi, tbsma_p, tbsma_q, tbsma_r0, tbsma_rc1, tbsma_rc2, tbsma_x5, tbsma_x4, tbsma_x3,&
         & tbsma_a5, tbsma_a4, tbsma_a3
         double precision ::  ar, br, cr, ab, bb, cb
+
+        integer :: i_tab
 
         ! Ni parameters (Cleri-Rosato)
         tbsma_a(1, 1)  = 0.0376d0
@@ -53,6 +61,37 @@ module potential
         tbsma_a5(1, 1) = (12*ar-6*br+cr)/(2*(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))**2)
         tbsma_a4(1, 1) = (15*ar-7*br+cr)/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))
         tbsma_a3(1, 1) = (20*ar-8*br+cr)/2
+
+
+        do i_tab=1, n_tab
+            r = i_tab * (tbsma_rc2(1, 1) / n_tab)
+
+            a = tbsma_a(typ(i_atom), typ(j_atom))
+            xi = tbsma_xi(typ(i_atom), typ(j_atom))
+            p = tbsma_p(typ(i_atom), typ(j_atom))
+            q = tbsma_q(typ(i_atom), typ(j_atom))
+            r0 = tbsma_r0(typ(i_atom), typ(j_atom))
+            rc1 = tbsma_rc1(typ(i_atom), typ(j_atom))
+            rc2 = tbsma_rc2(typ(i_atom), typ(j_atom))
+
+            x5 = tbsma_x5(typ(i_atom), typ(j_atom))
+            x4 = tbsma_x4(typ(i_atom), typ(j_atom))
+            x3 = tbsma_x3(typ(i_atom), typ(j_atom))
+            a5 = tbsma_a5(typ(i_atom), typ(j_atom))
+            a4 = tbsma_a4(typ(i_atom), typ(j_atom))
+            a3 = tbsma_a3(typ(i_atom), typ(j_atom))
+
+            if (r .gt. rc1) then
+                tab_rho(1, 1, i_tab) = (x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3)**2
+                tab_drep(1, 1, i_tab) = 2.0d0*(5*a5*(r-rc2)**4 + 4*a4*(r-rc2)**3 + 3*a3*(r-rc2)**2)/r
+                tab_drho(1, 1, i_tab) = -(5*x5*(r-rc2)**4 + 4*x4*(r-rc2)**3 + 3*x3*(r-rc2)**2) &
+                                   &*(x5*(r-rc2)**5 + x4*(r-rc2)**4 + x3*(r-rc2)**3) / r
+            else
+                tab_rho(1, 1, i_tab) = xi**2 * exp(-2.0d0 * q * (r/r0 - 1.0d0))
+                tab_drep(1, 1, i_tab) = -2.0d0 * a * p/r0 * exp(-p * (r/r0 - 1.0d0)) / r
+                tab_drho(1, 1, i_tab) = q * xi**2 / r0 * exp(-2.0d0 * q * (r/r0 - 1.0d0)) / r
+            endif
+        enddo
     endsubroutine
 
 
@@ -105,6 +144,44 @@ module potential
         enddo
     endsubroutine
 
+
+    subroutine force_tbsma_tab
+        use constants, only: n_atoms_max
+        use variables, only: pos, box, n_atoms, typ, force, neigh, n_neigh
+
+        double precision                    ::  rho(n_atoms_max), rij(3), r
+        double precision                    ::  rep, band, tmp
+        double precision                    ::  a, xi, p, q, r0, rc1, rc2, x5, x4, x3, a5, a4, a3
+        integer                             ::  i_atom, j_atom, j_neigh
+
+        rho(1:n_atoms) = 0.0d0
+        do i_atom = 1, n_atoms
+            do j_neigh = 1, n_neigh(i_atom)
+                j_atom = neigh(j_neigh, i_atom)
+                rij = pos(:, j_atom) - pos(:, i_atom)
+                rij = rij - box * nint(rij/box)
+                r = norm2(rij)
+                i_tab = min(int(n_tab * r / tbsma_rc2(typ(i_atom), typ(j_atom))) + 1, n_tab)
+                rho(i_atom) = tab_rho(typ(i_atom), typ(j_atom), i_tab)
+            enddo
+        enddo
+
+        force(:, 1:n_atoms) = 0.0d0
+        do i_atom = 1, n_atoms
+            do j_neigh = 1, n_neigh(i_atom)
+                j_atom = neigh(j_neigh, i_atom)
+                if (j_atom .gt. i_atom) cycle
+                rij = pos(:, j_atom) - pos(:, i_atom)
+                rij = rij - box * nint(rij/box)
+                r = norm2(rij)
+                i_tab = min(int(n_tab * r / tbsma_rc2(typ(i_atom), typ(j_atom))) + 1, n_tab)
+                force(:, i_atom) = force(:, i_atom) + (tab_drep(i_tab) + tab_drho(i_tab)&
+                                    &* (1.0d0/sqrt(rho(j_atom)) + 1.0d0/sqrt(rho(i_atom)))) * rij
+                force(:, j_atom) = force(:, j_atom) - (tab_drep(i_tab) + tab_drho(i_tab)
+                                    &* (1.0d0/sqrt(rho(j_atom)) + 1.0d0/sqrt(rho(i_atom)))) * rij
+            enddo
+        enddo
+    endsubroutine
 
     subroutine force_tbsma
         use constants, only: n_atoms_max
