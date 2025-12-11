@@ -25,10 +25,13 @@ program main
             call nose_hoover
         endif
 
-        call save_data
-        call save_xyz
+!        call save_data
+!        call save_xyz
         time = i_step*dt
         call init_neigh_list
+        if (mod(i_step, 1000) .eq. 0) then
+            write(*,*) 'Step:', i_step
+        endif
     enddo
 
 endprogram

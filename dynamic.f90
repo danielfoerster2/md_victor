@@ -29,14 +29,14 @@ module dynamic
     subroutine verlet_velocity
         use constants, only: mass, dt
         use variables, only: n_atoms, typ, force, vel, pos
-        use potential, only: force_tbsma_tab, epot_tbsma
+        use potential, only: force_tbsma, epot_tbsma
 
         integer                             ::  i_atom
         double precision                    ::  a(3)
         logical, save                       ::  first_call = .true.
 
         if (first_call) then
-            call force_tbsma_tab
+            call force_tbsma
             first_call = .false.
         endif
 
@@ -46,7 +46,7 @@ module dynamic
             vel(:, i_atom) = vel(:, i_atom) + a*dt/2.0d0
         enddo
 
-        call force_tbsma_tab
+        call force_tbsma
 
         do i_atom = 1, n_atoms
             vel(:, i_atom) = vel(:, i_atom) + force(:, i_atom)/mass(typ(i_atom)) * dt/2.0d0
@@ -59,7 +59,7 @@ module dynamic
 
         use constants, only: mass, kb, dt, n_atoms_max, omega
         use variables, only: n_atoms, typ, force, vel, target_temperature, pos, epot, Qth
-        use potential, only: force_tbsma_tab, epot_tbsma
+        use potential, only: force_tbsma, epot_tbsma
 
         implicit none
 
@@ -79,7 +79,7 @@ module dynamic
             g = (2.0d0*ekin - (3*n_atoms-3)*kb*target_temperature) / Qth
             v_thermo_old = -dt * g
 
-            call force_tbsma_tab
+            call force_tbsma
             do i_atom = 1, n_atoms
                 accel(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
             enddo
@@ -90,7 +90,7 @@ module dynamic
 
         x_thermo = x_thermo + v_thermo*dt + 0.5d0*g*dt**2
 
-        call force_tbsma_tab
+        call force_tbsma
         do i_atom = 1, n_atoms
             accel_new(:, i_atom) = force(:, i_atom)/mass(typ(i_atom))
         enddo
@@ -119,8 +119,8 @@ module dynamic
         accel(:, 1:n_atoms) = accel_new
 
         eth = Qth*v_thermo**2 / 2.0d0 + (3*n_atoms-3)*kb*target_temperature*x_thermo
-        call epot_tbsma
-        write(*, *) 'Energy:', eth+ekin + sum(epot(1:n_atoms))
+        !call epot_tbsma
+        !write(*, *) 'Energy:', eth+ekin + sum(epot(1:n_atoms))
     endsubroutine
 
 

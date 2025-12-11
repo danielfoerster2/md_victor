@@ -2,11 +2,11 @@
 
 import numpy as np
 
-n_atoms = 50
+n_atoms = 500
 
 f = open('input.xyz', 'w')
 
-box_length = 10
+box_length = 50
 xyz = np.zeros((n_atoms, 3))
 
 print(n_atoms, file=f)
