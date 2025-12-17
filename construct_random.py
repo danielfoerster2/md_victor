@@ -23,7 +23,10 @@ for i in range(n_atoms):
                 not_ok = True
                 break
     xyz[i, :] = coord
-    print("Ni", *coord, file=f)
+    if i%2 == 0:
+        print("Ag", *coord, file=f)
+    else:
+        print("Co", *coord, file=f)
 
 f.close()
 

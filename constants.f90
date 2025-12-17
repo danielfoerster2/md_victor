@@ -11,13 +11,14 @@ module constants
 
     integer, parameter              ::  n_atoms_max = 1000, n_steps = 50000, n_neigh_max = 50
     double precision, parameter     ::  convert_mass = 1.0364269d2 ! 1 u = 1.0364269d2 eV.fs²/Angstrom²
-    integer, parameter              ::  n_types = 5
-    double precision, parameter     ::  mass(n_types) = (/58.6934d0, 63.546d0, 102.9055d0, 106.42d0, 195.084d0/) * convert_mass
+    integer, parameter              ::  n_types = 7
+    double precision, parameter     ::  mass(n_types) = (/58.6934d0, 63.546d0, 102.9055d0, &
+                                        & 106.42d0, 195.084d0, 107.8682d0, 58.933195d0/) * convert_mass
 
     double precision, parameter     ::  kb = 8.617d-5 ! Boltzmann constant (eV/K)
     double precision, parameter     ::  omega = 0.1d0 ! Nose-Hoover frequency (1/fs)
     double precision, parameter     ::  dt = 1.0d0 ! Time step (fs)
-    character(len=2), parameter     ::  iel_to_typ(n_types) = (/'Ni', 'Cu', 'Rh', 'Pd', 'Pt' /)
+    character(len=2), parameter     ::  iel_to_typ(n_types) = (/'Ni', 'Cu', 'Rh', 'Pd', 'Pt', 'Ag', 'Co'/)
 
     double precision                ::  tbsma_a(n_types, n_types), tbsma_xi(n_types, n_types), &
                                         tbsma_p(n_types, n_types), tbsma_q(n_types, n_types), &

@@ -18,7 +18,7 @@ module potential
         & tbsma_a5, tbsma_a4, tbsma_a3, tbsma_rc2_sq_max, tbsma_rc2_sq
         double precision ::  ar, br, cr, ab, bb, cb, a, p, q, xi, r0, rc1, rc2, r, a3, a4, a5, x3, x4, x5, r2
 
-        integer :: i_tab
+        integer :: i_tab, i_el, j_el
 
         ! Ni parameters (Cleri-Rosato)
         tbsma_a(1, 1)  = 0.0376d0
@@ -26,6 +26,41 @@ module potential
         tbsma_p(1, 1)  = 16.999d0
         tbsma_q(1, 1)  = 1.189d0
         tbsma_r0(1, 1) = 3.523/2**0.5d0
+        
+        ! Ag parameters
+        tbsma_a(6, 6)  = 0.10433d0
+        tbsma_xi(6, 6) = 1.194019d0
+        tbsma_p(6, 6)  = 10.79d0
+        tbsma_q(6, 6)  = 3.19d0
+        tbsma_r0(6, 6) = 2.0d0*1.445d0
+        tbsma_rc1(6, 6) = 4.08707719d0
+        tbsma_rc2(6, 6) = 5.0056268338740553d0
+
+        ! Co parameters
+        tbsma_a(7, 7)  = 0.175700d0
+        tbsma_xi(7, 7) = 1.843d0
+        tbsma_p(7, 7)  = 9.210d0
+        tbsma_q(7, 7)  = 2.975d0
+        tbsma_r0(7, 7) = 2.0d0*1.25d0
+        tbsma_rc1(7, 7) = 3.53553391d0
+        tbsma_rc2(7, 7) = 4.3301270189221932d0
+
+        ! AgCo parameters
+        tbsma_a(6, 7)  = 0.15202d0
+        tbsma_xi(6, 7) = 1.4319d0
+        tbsma_p(6, 7)  = 10.001d0
+        tbsma_q(6, 7)  = 3.085d0
+        tbsma_r0(6, 7) = 1.445d0+1.25d0
+        tbsma_rc1(6, 7) = 4.08707719d0
+        tbsma_rc2(6, 7) = 4.3301270189221932d0
+
+        tbsma_a(7, 6)  = tbsma_a(6, 7)
+        tbsma_xi(7, 6) = tbsma_xi(6, 7)
+        tbsma_p(7, 6)  = tbsma_p(6, 7)
+        tbsma_q(7, 6)  = tbsma_q(6, 7)
+        tbsma_r0(7, 6) = tbsma_r0(6, 7)
+        tbsma_rc1(7, 6) = tbsma_rc1(6, 7)
+        tbsma_rc2(7, 6) = tbsma_rc2(6, 7)
 
         ! Cu parameters (Cleri-Rosato)
         ! tbsma_a(1, 1)  = 0.0855d0
@@ -41,28 +76,40 @@ module potential
         ! tbsma_q(1, 1)  = 1.867d0
         ! tbsma_r0(1, 1) = 3.803d0/2**0.5d0
 
-        tbsma_rc1(1, 1) = 3.0d0**0.5*tbsma_r0(1, 1) + 0.05d0
-        tbsma_rc2(1, 1) = tbsma_rc1(1, 1) + 0.3d0
-        tbsma_rc2_sq(1, 1) = tbsma_rc2(1, 1)**2
-        tbsma_rc2_sq_max = tbsma_rc2(1, 1)**2 ! maxval(tbsma_rc2**2) XXX
+        !tbsma_rc1(1, 1) = 3.0d0**0.5*tbsma_r0(1, 1) + 0.05d0
+        !tbsma_rc2(1, 1) = tbsma_rc1(1, 1) + 0.3d0
+        !tbsma_rc2_sq(1, 1) = tbsma_rc2(1, 1)**2
+        !tbsma_rc2_sq_max = tbsma_rc2(1, 1)**2 ! maxval(tbsma_rc2**2) XXX
 
-        ar =-tbsma_a(1, 1)*exp(-tbsma_p(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))**3
-        br =-(tbsma_p(1, 1)/tbsma_r0(1, 1))*tbsma_a(1, 1)*exp(-tbsma_p(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))/(tbsma_rc2(1, 1)&
-        &-tbsma_rc1(1, 1))**2
-        cr =-((tbsma_p(1, 1)/tbsma_r0(1, 1))**2)*tbsma_a(1, 1)*exp(-tbsma_p(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))&
-        &/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))
-        ab =-tbsma_xi(1, 1)*exp(-tbsma_q(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))**3
-        bb =-(tbsma_q(1, 1)/tbsma_r0(1, 1))*tbsma_xi(1, 1)*exp(-tbsma_q(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))/(tbsma_rc2(1, 1)&
-        &-tbsma_rc1(1, 1))**2
-        cb =-((tbsma_q(1, 1)/tbsma_r0(1, 1))**2)*tbsma_xi(1, 1)*exp(-tbsma_q(1, 1)*(tbsma_rc1(1, 1)/tbsma_r0(1, 1)-1))&
-        &/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))
+        do i_el = 1, n_types
+            do j_el = 1, n_types
 
-        tbsma_x5(1, 1) = (12*ab-6*bb+cb)/(2*(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))**2)
-        tbsma_x4(1, 1) = (15*ab-7*bb+cb)/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))
-        tbsma_x3(1, 1) = (20*ab-8*bb+cb)/2
-        tbsma_a5(1, 1) = (12*ar-6*br+cr)/(2*(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))**2)
-        tbsma_a4(1, 1) = (15*ar-7*br+cr)/(tbsma_rc2(1, 1)-tbsma_rc1(1, 1))
-        tbsma_a3(1, 1) = (20*ar-8*br+cr)/2
+                tbsma_rc1(i_el, j_el) = 3.0d0**0.5*tbsma_r0(i_el, j_el) + 0.05d0
+                tbsma_rc2(i_el, j_el) = tbsma_rc1(i_el, j_el) + 0.3d0
+                tbsma_rc2_sq(i_el, j_el) = tbsma_rc2(i_el, j_el)**2
+                tbsma_rc2_sq_max = tbsma_rc2(i_el, j_el)**2 ! maxval(tbsma_rc2**2) XXX
+
+                ar =-tbsma_a(i_el, j_el)*exp(-tbsma_p(i_el, j_el)*(tbsma_rc1(i_el, j_el)/tbsma_r0(i_el, j_el)-1))&
+                    &/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))**3
+                br =-(tbsma_p(i_el, j_el)/tbsma_r0(i_el, j_el))*tbsma_a(i_el, j_el)*exp(-tbsma_p(i_el, j_el)&
+                    &*(tbsma_rc1(i_el, j_el)/tbsma_r0(i_el, j_el)-1))/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))**2
+                cr =-((tbsma_p(i_el, j_el)/tbsma_r0(i_el, j_el))**2)*tbsma_a(i_el, j_el)*exp(-tbsma_p(i_el, j_el)&
+                    &*(tbsma_rc1(i_el, j_el)/tbsma_r0(i_el, j_el)-1))/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))
+                ab =-tbsma_xi(i_el, j_el)*exp(-tbsma_q(i_el, j_el)*(tbsma_rc1(i_el, j_el)/tbsma_r0(i_el, j_el)-1))&
+                    &/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))**3
+                bb =-(tbsma_q(i_el, j_el)/tbsma_r0(i_el, j_el))*tbsma_xi(i_el, j_el)*exp(-tbsma_q(i_el, j_el)&
+                    &*(tbsma_rc1(i_el, j_el)/tbsma_r0(i_el, j_el)-1))/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))**2
+                cb =-((tbsma_q(i_el, j_el)/tbsma_r0(i_el, j_el))**2)*tbsma_xi(i_el, j_el)*exp(-tbsma_q(i_el, j_el)&
+                    &*(tbsma_rc1(i_el, j_el)/tbsma_r0(i_el, j_el)-1))/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))
+
+                tbsma_x5(i_el, j_el) = (12*ab-6*bb+cb)/(2*(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))**2)
+                tbsma_x4(i_el, j_el) = (15*ab-7*bb+cb)/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))
+                tbsma_x3(i_el, j_el) = (20*ab-8*bb+cb)/2
+                tbsma_a5(i_el, j_el) = (12*ar-6*br+cr)/(2*(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))**2)
+                tbsma_a4(i_el, j_el) = (15*ar-7*br+cr)/(tbsma_rc2(i_el, j_el)-tbsma_rc1(i_el, j_el))
+                tbsma_a3(i_el, j_el) = (20*ar-8*br+cr)/2
+            enddo
+        enddo
 
         inv_rc2_sq_tab = n_tab/ tbsma_rc2_sq_max
 
