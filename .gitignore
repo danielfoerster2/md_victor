@@ -16,3 +16,5 @@ force.aux
 force.log
 neighbor.o
 neighbor.mod
+
+*.dat

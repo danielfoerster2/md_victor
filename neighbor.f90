@@ -7,10 +7,10 @@ module neighbor
 
     subroutine init_neigh_list
 
-        use constants, only: n_atoms_max, tbsma_rc2, n_neigh_max, skin, tbsma_rc2_sq_max
-        use variables, only: pos, box, n_atoms, neigh, n_neigh, typ
+        use constants, only: n_atoms_max, n_neigh_max, skin, tbsma_rc2_sq_max
+        use variables, only: pos, box, n_atoms, neigh, n_neigh
 
-        double precision                ::  r_max, rij(3), r2, rc2, skin_sq, r_max2
+        double precision                ::  rij(3), r2, skin_sq, r_max2
         double precision, save          ::  pos_old(3, n_atoms_max) = 0.0d0
         integer                         ::  i_atom, j_atom
         logical                         ::  update
@@ -41,7 +41,7 @@ module neighbor
                     endif
                     if ( (n_neigh(i_atom) .eq. n_neigh_max) .or. (n_neigh(j_atom) .eq. n_neigh_max )) then
                         write(*,*) 'Neighbor list overflow for atom ', i_atom
-                        exit
+                        stop
                     endif
                 enddo
             enddo

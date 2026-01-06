@@ -1,10 +1,16 @@
 #!/usr/bin/python3
 
+import os
+
 import numpy as np
 
-n_atoms = 500
+n_atoms = int(os.environ.get("n_atoms"))
+atom_typ1 = os.environ.get("atom_typ1")
+atom_typ2 = os.environ.get("atom_typ2")
+file = os.environ.get("file_input")
 
-f = open('input.xyz', 'w')
+#f = open('input.xyz', 'w')
+f = open(file, 'w')
 
 box_length = 50
 xyz = np.zeros((n_atoms, 3))
@@ -24,9 +30,9 @@ for i in range(n_atoms):
                 break
     xyz[i, :] = coord
     if i%2 == 0:
-        print("Ag", *coord, file=f)
+        print(atom_typ1, *coord, file=f)
     else:
-        print("Co", *coord, file=f)
+        print(atom_typ2, *coord, file=f)
 
 f.close()
 

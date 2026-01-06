@@ -20,61 +20,40 @@ module potential
 
         integer :: i_tab, i_el, j_el
 
-        ! Ni parameters (Cleri-Rosato)
-        tbsma_a(1, 1)  = 0.0376d0
-        tbsma_xi(1, 1) = 1.070d0
-        tbsma_p(1, 1)  = 16.999d0
-        tbsma_q(1, 1)  = 1.189d0
-        tbsma_r0(1, 1) = 3.523/2**0.5d0
-        
-        ! Ag parameters
-        tbsma_a(6, 6)  = 0.10433d0
-        tbsma_xi(6, 6) = 1.194019d0
-        tbsma_p(6, 6)  = 10.79d0
-        tbsma_q(6, 6)  = 3.19d0
-        tbsma_r0(6, 6) = 2.0d0*1.445d0
-        tbsma_rc1(6, 6) = 4.08707719d0
-        tbsma_rc2(6, 6) = 5.0056268338740553d0
+        ! Ag parameters    
+        tbsma_p(1, 1) = 10.79d0
+        tbsma_r0(1, 1) = 2.0d0*1.445d0
+        tbsma_a(1, 1) = 0.10433d0
+        tbsma_rc1(1, 1) = 4.08707719d0
+        tbsma_rc2(1, 1) = 5.0056268338740553d0
+        tbsma_q(1, 1) = 3.19d0
+        tbsma_xi(1, 1) = 1.194019d0
 
         ! Co parameters
-        tbsma_a(7, 7)  = 0.175700d0
-        tbsma_xi(7, 7) = 1.843d0
-        tbsma_p(7, 7)  = 9.210d0
-        tbsma_q(7, 7)  = 2.975d0
-        tbsma_r0(7, 7) = 2.0d0*1.25d0
-        tbsma_rc1(7, 7) = 3.53553391d0
-        tbsma_rc2(7, 7) = 4.3301270189221932d0
-
+        tbsma_p(2, 2) = 9.210d0
+        tbsma_r0(2, 2) = 2.0d0*1.25d0
+        tbsma_a(2, 2) = 0.175700d0
+        tbsma_rc1(2, 2) = 3.53553391d0
+        tbsma_rc2(2, 2) = 4.3301270189221932d0
+        tbsma_q(2, 2) = 2.975d0
+        tbsma_xi(2, 2) = 1.843d0
+        
         ! AgCo parameters
-        tbsma_a(6, 7)  = 0.15202d0
-        tbsma_xi(6, 7) = 1.4319d0
-        tbsma_p(6, 7)  = 10.001d0
-        tbsma_q(6, 7)  = 3.085d0
-        tbsma_r0(6, 7) = 1.445d0+1.25d0
-        tbsma_rc1(6, 7) = 4.08707719d0
-        tbsma_rc2(6, 7) = 4.3301270189221932d0
-
-        tbsma_a(7, 6)  = tbsma_a(6, 7)
-        tbsma_xi(7, 6) = tbsma_xi(6, 7)
-        tbsma_p(7, 6)  = tbsma_p(6, 7)
-        tbsma_q(7, 6)  = tbsma_q(6, 7)
-        tbsma_r0(7, 6) = tbsma_r0(6, 7)
-        tbsma_rc1(7, 6) = tbsma_rc1(6, 7)
-        tbsma_rc2(7, 6) = tbsma_rc2(6, 7)
-
-        ! Cu parameters (Cleri-Rosato)
-        ! tbsma_a(1, 1)  = 0.0855d0
-        ! tbsma_xi(1, 1) = 1.224d0
-        ! tbsma_p(1, 1)  = 10.960d0
-        ! tbsma_q(1, 1)  = 2.278d0
-        ! tbsma_r0(1, 1) = 3.615/2**0.5d0
-
-        ! Rh parameters (Cleri-Rosato table)
-        ! tbsma_a(1, 1)  = 0.0629d0
-        ! tbsma_xi(1, 1) = 1.660d0
-        ! tbsma_p(1, 1)  = 18.450d0
-        ! tbsma_q(1, 1)  = 1.867d0
-        ! tbsma_r0(1, 1) = 3.803d0/2**0.5d0
+        tbsma_p(1, 2) = 10.001d0
+        tbsma_r0(1, 2) = 1.445d0+1.25d0
+        tbsma_a(1, 2) = 0.15202d0
+        tbsma_rc1(1, 2) = 4.08707719d0
+        tbsma_rc2(1, 2) = 4.3301270189221932d0
+        tbsma_q(1, 2) = 3.085d0
+        tbsma_xi(1, 2) = 1.4319d0
+        
+        tbsma_a(2, 1)  = tbsma_a(1, 2)
+        tbsma_xi(2, 1) = tbsma_xi(1, 2)
+        tbsma_p(2, 1)  = tbsma_p(1, 2)
+        tbsma_q(2, 1)  = tbsma_q(1, 2)
+        tbsma_r0(2, 1) = tbsma_r0(1, 2)
+        tbsma_rc1(2, 1) = tbsma_rc1(1, 2)
+        tbsma_rc2(2, 1) = tbsma_rc2(1, 2)
 
         !tbsma_rc1(1, 1) = 3.0d0**0.5*tbsma_r0(1, 1) + 0.05d0
         !tbsma_rc2(1, 1) = tbsma_rc1(1, 1) + 0.3d0
@@ -84,8 +63,8 @@ module potential
         do i_el = 1, n_types
             do j_el = 1, n_types
 
-                tbsma_rc1(i_el, j_el) = 3.0d0**0.5*tbsma_r0(i_el, j_el) + 0.05d0
-                tbsma_rc2(i_el, j_el) = tbsma_rc1(i_el, j_el) + 0.3d0
+                !tbsma_rc1(i_el, j_el) = 5.0d0**0.5*tbsma_r0(i_el, j_el) + 0.05d0
+                !tbsma_rc2(i_el, j_el) = tbsma_rc1(i_el, j_el) + 0.3d0
                 tbsma_rc2_sq(i_el, j_el) = tbsma_rc2(i_el, j_el)**2
                 tbsma_rc2_sq_max = tbsma_rc2(i_el, j_el)**2 ! maxval(tbsma_rc2**2) XXX
 
@@ -255,7 +234,7 @@ module potential
 
         double precision                    ::  rho(n_atoms_max), rij(3), r, r2
         double precision                    ::  rep, band, tmp
-        double precision                    ::  a, xi, p, q, r0, rc1, rc2, x5, x4, x3, a5, a4, a3, tmp2(3)
+        double precision                    ::  a, xi, p, q, r0, rc2, x5, x4, x3, a5, a4, a3, tmp2(3)
         integer                             ::  i_atom, j_atom, j_neigh
 
         rho(1:n_atoms) = 0.0d0

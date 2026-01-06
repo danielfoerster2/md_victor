@@ -5,78 +5,99 @@ module dynamic
     contains
 
     subroutine v_init
-        use constants, only: mass, kb
-        use variables, only: n_atoms, vel, target_temperature, typ, pos
+        use constants, only: mass, kb, pi
+        use variables, only: n_atoms, vel, initial_temperature, typ, pos, box
         
-        double precision                ::  v_cm(3), r_cm(3), e_kin, temperature_init, L(3), r(3), m
-        double precision                ::  I(3, 3), inv_I(3, 3), omega(3), v_rot(3)
+        double precision                ::  v_cm(3), r_cm(3), e_kin, temperature_init, ang_momentum(3), r(3)
+        double precision                ::  inertia_tensor(3, 3), inv_tensor(3, 3), omega(3), v_rotational(3), m
+        double precision                ::  u1, u2, u3, u4
         integer                         ::  i_atom
 
-        call random_number(vel(:, 1:n_atoms))
+        do i_atom = 1, n_atoms
+            call random_number(u1)
+            call random_number(u2)
+            call random_number(u3)
+            call random_number(u4)
+            vel(1, i_atom) = sqrt(-2.0d0*log(u1)) * cos(2.0d0*pi*u2)
+            vel(2, i_atom) = sqrt(-2.0d0*log(u1)) * sin(2.0d0*pi*u2)
+            vel(3, i_atom) = sqrt(-2.0d0*log(u3)) * cos(2.0d0*pi*u4)
+        enddo
         v_cm = 0.0d0
         r_cm = 0.0d0
         do i_atom = 1, n_atoms
             v_cm = v_cm + mass(typ(i_atom)) * vel(:, i_atom)
             r_cm = r_cm + mass(typ(i_atom)) * pos(:, i_atom)
         enddo
-        v_cm = v_cm / sum(mass(typ(1:n_atoms)))
-        r_cm = r_cm / sum(mass(typ(1:n_atoms)))
+        m = sum(mass(typ(1:n_atoms)))
+        v_cm = v_cm / m
+        r_cm = r_cm / m
 
-        L = 0.0d0
+        ang_momentum = 0.0d0
+        inertia_tensor = 0.0d0
         do i_atom = 1, n_atoms
             r(1) = pos(1, i_atom) - r_cm(1)
             r(2) = pos(2, i_atom) - r_cm(2)
             r(3) = pos(3, i_atom) - r_cm(3)
+            r = r - box * nint(r/box)
             m = mass(typ(i_atom))
 
-            L(1) = L(1) + (r(2) * m*vel(3, i_atom) - r(3) * m*vel(2, i_atom))
-            L(2) = L(3) + (r(3) * m*vel(1, i_atom) - r(1) * m*vel(3, i_atom))
-            L(3) = L(3) + (r(1) * m*vel(2, i_atom) - r(2) * m*vel(1, i_atom))
+            ang_momentum(1) = ang_momentum(1) + (r(2) * m*vel(3, i_atom) - r(3) * m*vel(2, i_atom))
+            ang_momentum(2) = ang_momentum(2) + (r(3) * m*vel(1, i_atom) - r(1) * m*vel(3, i_atom))
+            ang_momentum(3) = ang_momentum(3) + (r(1) * m*vel(2, i_atom) - r(2) * m*vel(1, i_atom))
 
-            I(1, 1) = I(1, 1) + m * (r(2)**2 + r(3)**2)
-            I(2, 2) = I(2, 2) + m * (r(1)**2 + r(3)**2)
-            I(3, 3) = I(3, 3) + m * (r(1)**2 + r(2)**2)
-            I(1, 2) = I(1, 2) - m * r(1) * r(2)
-            I(1, 3) = I(1, 3) - m * r(1) * r(3)
-            I(2, 3) = I(2, 3) - m * r(2) * r(3)
+            inertia_tensor(1, 1) = inertia_tensor(1, 1) + m * (r(2)**2 + r(3)**2)
+            inertia_tensor(2, 2) = inertia_tensor(2, 2) + m * (r(1)**2 + r(3)**2)
+            inertia_tensor(3, 3) = inertia_tensor(3, 3) + m * (r(1)**2 + r(2)**2)
+            inertia_tensor(1, 2) = inertia_tensor(1, 2) - m * r(1) * r(2)
+            inertia_tensor(1, 3) = inertia_tensor(1, 3) - m * r(1) * r(3)
+            inertia_tensor(2, 3) = inertia_tensor(2, 3) - m * r(2) * r(3)
         enddo
-        I(2, 1) = I(1, 2)
-        I(3, 1) = I(1, 3)
-        I(3, 2) = I(2, 3)
 
-        inv_I(1, :) = (/ I(2,2)*I(3,3) - I(2,3)**2, I(2,3)*I(1,3) - I(1,2)*I(3,3), I(1,2)*I(2,3) - I(2,2)*I(1,3) /) 
-        inv_I(2, :) = (/ I(1,3)*I(2,3) - I(1,2)*I(3,3), I(1,1)*I(3,3) - I(1,3)**2, I(1,2)*I(1,3) - I(1,1)*I(2,3) /) 
-        inv_I(3, :) = (/ I(1,2)*I(2,3) - I(1,3)*I(2,2), I(1,2)*I(1,3) - I(1,1)*I(2,3), I(1,1)*I(2,2) - I(1,2)**2 /) 
-        inv_I = 1.0d0 / (I(1,1)*I(2,2)*I(3,3) - I(1,1)*I(2,3)**2 - I(3,3)*I(1,2)**2 - I(2,2)*I(1,3)**2 + 2*I(1,2)*I(1,3)*I(2,3))&
-            & * inv_I
+        inertia_tensor(2, 1) = inertia_tensor(1, 2)
+        inertia_tensor(3, 1) = inertia_tensor(1, 3)
+        inertia_tensor(3, 2) = inertia_tensor(2, 3)
 
-        omega(1) = inv_I(1, 1) * L(1) + inv_I(1, 2) * L(2) + inv_I(1, 3) * L(3)
-        omega(2) = inv_I(2, 1) * L(1) + inv_I(2, 2) * L(2) + inv_I(2, 3) * L(3)
-        omega(3) = inv_I(3, 1) * L(1) + inv_I(3, 2) * L(2) + inv_I(3, 3) * L(3)
+        inv_tensor(1, :) = (/ inertia_tensor(2,2)*inertia_tensor(3,3) - inertia_tensor(2,3)**2,&
+                        & inertia_tensor(2,3)*inertia_tensor(1,3) - inertia_tensor(1,2)*inertia_tensor(3,3), &
+                        & inertia_tensor(1,2)*inertia_tensor(2,3) - inertia_tensor(2,2)*inertia_tensor(1,3) /) 
+        inv_tensor(2, :) = (/ inertia_tensor(1,3)*inertia_tensor(2,3) - inertia_tensor(1,2)*inertia_tensor(3,3), &
+                        & inertia_tensor(1,1)*inertia_tensor(3,3) - inertia_tensor(1,3)**2, &
+                        & inertia_tensor(1,2)*inertia_tensor(1,3) - inertia_tensor(1,1)*inertia_tensor(2,3) /) 
+        inv_tensor(3, :) = (/ inertia_tensor(1,2)*inertia_tensor(2,3) - inertia_tensor(1,3)*inertia_tensor(2,2), &
+                        & inertia_tensor(1,2)*inertia_tensor(1,3) -  inertia_tensor(1,1)*inertia_tensor(2,3), &
+                        & inertia_tensor(1,1)*inertia_tensor(2,2) - inertia_tensor(1,2)**2 /) 
+        inv_tensor = 1.0d0 / (inertia_tensor(1,1)*inertia_tensor(2,2)*inertia_tensor(3,3) - inertia_tensor(1,1) &
+                    & *inertia_tensor(2,3)**2 - inertia_tensor(3,3)*inertia_tensor(1,2)**2 - inertia_tensor(2,2) &
+                    & *inertia_tensor(1,3)**2 + 2*inertia_tensor(1,2)*inertia_tensor(1,3)*inertia_tensor(2,3)) * inv_tensor
+
+        omega = matmul(inv_tensor, ang_momentum)
 
         e_kin = 0.0d0
         do i_atom = 1, n_atoms
             r(1) = pos(1, i_atom) - r_cm(1)
             r(2) = pos(2, i_atom) - r_cm(2)
             r(3) = pos(3, i_atom) - r_cm(3)
-            v_rot(1) = omega(2)*r(3) - omega(3)*r(2)
-            v_rot(2) = omega(3)*r(1) - omega(1)*r(3)
-            v_rot(3) = omega(1)*r(2) - omega(2)*r(1)
-            vel(:, i_atom) = vel(:, i_atom) - v_cm - v_rot
+            v_rotational(1) = omega(2)*r(3) - omega(3)*r(2)
+            v_rotational(2) = omega(3)*r(1) - omega(1)*r(3)
+            v_rotational(3) = omega(1)*r(2) - omega(2)*r(1)
+            vel(:, i_atom) = vel(:, i_atom) - v_cm - v_rotational
             e_kin = e_kin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
         enddo
         temperature_init = 2.0d0 * e_kin / ((3*n_atoms-6) * kb)
-        vel(:, 1:n_atoms) = vel(:, 1:n_atoms) * sqrt(target_temperature / temperature_init)
+        do i_atom = 1, n_atoms
+            vel(:, i_atom) = vel(:, i_atom) * sqrt(kb*initial_temperature / mass(typ(i_atom)))
+        enddo
+        
     endsubroutine
 
 
     subroutine verlet_velocity
         use constants, only: mass, dt
-        use variables, only: n_atoms, typ, force, vel, pos, epot
+        use variables, only: n_atoms, typ, force, vel, pos, ekin
         use potential, only: force_tbsma, epot_tbsma
 
         integer                             ::  i_atom
-        double precision                    ::  a(3), ekin
+        double precision                    ::  a(3)
         logical, save                       ::  first_call = .true.
 
         if (first_call) then
@@ -96,8 +117,6 @@ module dynamic
             vel(:, i_atom) = vel(:, i_atom) + force(:, i_atom)/mass(typ(i_atom)) * dt/2.0d0
             ekin = ekin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
         enddo
-        !call epot_tbsma
-        !write(*, *) 'Energy:', ekin + sum(epot(1:n_atoms))
 
     endsubroutine
 
@@ -105,15 +124,15 @@ module dynamic
     subroutine nose_hoover
 
         use constants, only: mass, kb, dt, n_atoms_max, omega
-        use variables, only: n_atoms, typ, force, vel, target_temperature, pos, epot, Qth
+        use variables, only: n_atoms, typ, force, vel, target_temperature, pos, Qth, ekin, eth
         use potential, only: force_tbsma, epot_tbsma
 
         implicit none
 
         double precision                        ::  g_new, v_thermo_new, ekin_new
-        double precision                        ::  accel_new(3, n_atoms), vk(3, n_atoms), eth
+        double precision                        ::  accel_new(3, n_atoms), vk(3, n_atoms)
         integer                                 ::  k, i_atom
-        double precision, save                  ::  accel(3, n_atoms_max), g, ekin
+        double precision, save                  ::  accel(3, n_atoms_max), g
         double precision, save                  ::  v_thermo = 0.0d0, x_thermo = 0.0d0, v_thermo_old
         logical, save                           ::  first_call = .true.
 
@@ -166,8 +185,6 @@ module dynamic
         accel(:, 1:n_atoms) = accel_new
 
         eth = Qth*v_thermo**2 / 2.0d0 + (3*n_atoms-6)*kb*target_temperature*x_thermo
-        !call epot_tbsma
-        write(*, *) 'Energy:', eth + ekin + sum(epot(1:n_atoms))
     endsubroutine
 
 

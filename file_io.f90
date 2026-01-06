@@ -9,12 +9,15 @@ module file_io
         use constants, only: iel_to_typ, n_types
         use variables, only: n_atoms, pos, box, typ
 
-        character(len=200)                                  ::  line
+        character(len=255)                                  ::  line, file
         character(len=2)                                    ::  symbol
         integer                                             ::  i_atoms, i_el, p1, p2
         double precision                                    ::  lat(9)
-
-        open(10, file="input.xyz", status='old', action='read')
+        
+        call get_environment_variable("file_input", file)
+        !read(env_var, *) file
+        open(10, file=file, status='old', action='read')
+        !open(10, file="input.xyz", status='old', action='read')
         read(10, *) n_atoms
         read(10, '(A)') line
         do i_atoms = 1, n_atoms
@@ -42,14 +45,18 @@ module file_io
         use constants, only: iel_to_typ
         use variables, only: n_atoms, pos, epot, box, typ
 
+        character(len=255)                  ::  file
         integer                             ::  i_atom
         logical, save                       ::  first_call = .true.
-
+        
+        call get_environment_variable("file_output", file)
         if (first_call) then
-            open(10, file="movie.xyz", status='replace')
+            open(10, file=file, status='replace')
+            !open(10, file="movie.xyz", status='replace')
             first_call = .false.
         else
-            open(10, file="movie.xyz", status='old', position='append')
+            open(10, file=file, status='old', position='append')
+            !open(10, file="movie.xyz", status='old', position='append')
         endif
 
         write(10, '(I0)') n_atoms
@@ -65,29 +72,49 @@ module file_io
 
 
     subroutine save_data
-        use variables, only: n_atoms, epot, vel, time, typ
+        
+        use variables, only: n_atoms, epot, time, eth, ekin
         use constants, only: mass
         use potential, only: epot_tbsma
-        double precision                :: e_kin
-        integer                         :: i_atom
-        logical, save                   :: first_call=.true.
 
-        call epot_tbsma
-        e_kin = 0.0d0
-        do i_atom = 1, n_atoms
-            e_kin = e_kin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
-        enddo
+        logical, save                   :: first_call=.true.
 
         if (first_call) then
             open(10, file="data.dat", status='replace')
-            write(10, '(A)')'time, E_pot, E_kin'
+            write(10, '(A)')'time, E_pot, E_kin, E_th'
             first_call = .false.
         else
             open(10, file="data.dat", status='old', position='append')
         endif
-        write(10, *) time, sum(epot(1:n_atoms)), e_kin
-
+        write(10, *) time, sum(epot(1:n_atoms)), ekin, eth
         close(10)
+
+    endsubroutine
+
+
+    subroutine test_velocity_distribution
+    
+        use variables, only: vel, n_atoms
+
+        integer                 ::  i_atom
+        logical, save           ::  first_call=.true.
+
+        if (first_call) then
+            open(10, file="vel_init.dat", status='replace')
+            write(10, '(A)')'vx, vy, vz'
+            do i_atom = 1, n_atoms
+                write(10, *) vel(1, i_atom), vel(2, i_atom), vel(3, i_atom)
+            enddo
+            close(10)
+            first_call = .false.
+        else
+            open(10, file="vel_final.dat", status='replace')
+            write(10, '(A)')'vx, vy, vz'
+            do i_atom = 1, n_atoms
+                write(10, *) vel(1, i_atom), vel(2, i_atom), vel(3, i_atom)
+            enddo
+            close(10)
+        endif
     endsubroutine
 
 end module
