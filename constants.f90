@@ -9,14 +9,14 @@ module constants
     ! mass     → eV·fs²/Angstrom²
 
 
-    integer, parameter              ::  n_atoms_max = 1000, n_neigh_max = 500
+    integer, parameter              ::  n_atoms_max = 5000, n_neigh_max = 500
     double precision, parameter     ::  convert_mass = 1.0364269d2 ! 1 u = 1.0364269d2 eV.fs²/Angstrom²
     integer, parameter              ::  n_types = 2
     double precision, parameter     ::  mass(n_types) = (/107.8682d0, 58.933195d0/) * convert_mass
 
     double precision, parameter     ::  kb = 8.617d-5 ! Boltzmann constant (eV/K)
     double precision, parameter     ::  omega = 0.1d0 ! Nose-Hoover frequency (1/fs)
-    double precision, parameter     ::  dt = 1.0d0 ! Time step (fs)
+    double precision, parameter     ::  dt = 5.0d0 ! Time step (fs)
     character(len=2), parameter     ::  iel_to_typ(n_types) = (/'Ag', 'Co'/)
 
     double precision                ::  tbsma_a(n_types, n_types), tbsma_xi(n_types, n_types), &

@@ -8,7 +8,7 @@ module dynamic
         use constants, only: mass, kb, pi
         use variables, only: n_atoms, vel, initial_temperature, typ, pos, box
         
-        double precision                ::  v_cm(3), r_cm(3), e_kin, temperature_init, ang_momentum(3), r(3)
+        double precision                ::  v_cm(3), r_cm(3), e_kin, ang_momentum(3), r(3)
         double precision                ::  inertia_tensor(3, 3), inv_tensor(3, 3), omega(3), v_rotational(3), m
         double precision                ::  u1, u2, u3, u4
         integer                         ::  i_atom
@@ -81,11 +81,8 @@ module dynamic
             v_rotational(2) = omega(3)*r(1) - omega(1)*r(3)
             v_rotational(3) = omega(1)*r(2) - omega(2)*r(1)
             vel(:, i_atom) = vel(:, i_atom) - v_cm - v_rotational
-            e_kin = e_kin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
-        enddo
-        temperature_init = 2.0d0 * e_kin / ((3*n_atoms-6) * kb)
-        do i_atom = 1, n_atoms
             vel(:, i_atom) = vel(:, i_atom) * sqrt(kb*initial_temperature / mass(typ(i_atom)))
+            e_kin = e_kin + 0.5d0 * mass(typ(i_atom)) * sum(vel(:, i_atom)**2)
         enddo
         
     endsubroutine

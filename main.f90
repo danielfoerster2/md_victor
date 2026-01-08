@@ -24,28 +24,30 @@ program main
     call read_xyz
     call init_tbsma
     call init_neigh_list
-    call epot_tbsma
+    ! call epot_tbsma
     call v_init
     !call test_velocity_distribution
     !call save_data
+    write(*,*) "Initialization done"
     do i_step = 1, n_steps
-        time = i_step*dt
+        !time = i_step*dt
         if (.not. use_thermostat) then
             call verlet_velocity
         else
             call nose_hoover
         endif
         call init_neigh_list
-        call epot_tbsma        
+        !call epot_tbsma
     
-        if (mod(i_step, 1000) .eq. 0) then
-            !write(*,*) 'Step:', i_step
+        if (mod(i_step, 100000) .eq. 0) then
+            write(*,*) 'Step:', i_step, '/', n_steps
             !call save_xyz
         endif
         !call save_data
-        target_temperature = (final_temperature - initial_temperature) / (n_steps*dt) * time + initial_temperature
+        target_temperature = (final_temperature - initial_temperature) / n_steps * dble(i_step) + initial_temperature
     enddo
-
+    write(*,*) "MD simulation done"
     !call test_velocity_distribution
+    call epot_tbsma
     call save_xyz
 endprogram

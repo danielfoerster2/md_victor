@@ -5,14 +5,15 @@ import os
 import numpy as np
 
 n_atoms = int(os.environ.get("n_atoms"))
+composition = float(os.environ.get("composition"))
+density = float(os.environ.get("density"))
 atom_typ1 = os.environ.get("atom_typ1")
 atom_typ2 = os.environ.get("atom_typ2")
 file = os.environ.get("file_input")
 
-#f = open('input.xyz', 'w')
 f = open(file, 'w')
 
-box_length = 50
+box_length = (n_atoms/density)**(1/3)
 xyz = np.zeros((n_atoms, 3))
 
 print(n_atoms, file=f)
@@ -29,10 +30,9 @@ for i in range(n_atoms):
                 not_ok = True
                 break
     xyz[i, :] = coord
-    if i%2 == 0:
+    if i < composition*n_atoms:
         print(atom_typ1, *coord, file=f)
     else:
         print(atom_typ2, *coord, file=f)
 
 f.close()
-

@@ -15,9 +15,7 @@ module file_io
         double precision                                    ::  lat(9)
         
         call get_environment_variable("file_input", file)
-        !read(env_var, *) file
         open(10, file=file, status='old', action='read')
-        !open(10, file="input.xyz", status='old', action='read')
         read(10, *) n_atoms
         read(10, '(A)') line
         do i_atoms = 1, n_atoms
@@ -27,7 +25,6 @@ module file_io
             enddo
         enddo
         close(10)
-
         p1 = index(line, 'Lattice="')
         p1 = p1 + len('Lattice="')
         p2 = index(line(p1:),'"')
@@ -36,6 +33,7 @@ module file_io
         box(1) = lat(1)
         box(2) = lat(5)
         box(3) = lat(9)
+        write(*,*) "File read : ", file
 
     endsubroutine
 
@@ -52,21 +50,18 @@ module file_io
         call get_environment_variable("file_output", file)
         if (first_call) then
             open(10, file=file, status='replace')
-            !open(10, file="movie.xyz", status='replace')
             first_call = .false.
         else
             open(10, file=file, status='old', position='append')
-            !open(10, file="movie.xyz", status='old', position='append')
         endif
-
         write(10, '(I0)') n_atoms
-
         write(10, '(A, 9ES22.15, A)') 'Lattice="', box(1), 0.0d0, 0.0d0, 0.0d0, box(2), 0.0d0, 0.0d0, 0.0d0, box(3), &
             '" Properties=species:S:1:pos:R:3:epot:R:1'
         do i_atom = 1, n_atoms
             write(10, '(A,4(X,ES22.15))') iel_to_typ(typ(i_atom)), pos(1, i_atom), pos(2, i_atom), pos(3, i_atom), epot(i_atom)
         enddo
         close(10)
+        write(*,*) "File saved : ", file
 
     endsubroutine
 
